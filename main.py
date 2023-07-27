@@ -124,7 +124,7 @@ def parser(verbose, inputfile, database):
 
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
-@click.version_option(version='1.0.0', prog_name="Shodan Parser")
+@click.version_option(version='1', prog_name="Shodan2DB")
 @click.option('--verbose', '-v', is_flag=True, help="Verbose mode")
 @click.option('--database', '-d', default='shodan.db', help='Database name', show_default=True, type=str)
 @click.option('--inputfile', '-i', help='Json export file from Shodan', required=True, type=str)
