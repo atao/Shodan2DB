@@ -5,7 +5,7 @@
 
 The purpose of this tool is to parse Shodan export files and put them into a SQLite database.
 
-The exports bypass the restriction on "**vuln**" and "**tag**" tags, which are only available with Small Business, Corporate or Enterprise accounts. These data are included present in Shodan exports.
+Exports bypass the restriction on "**vuln**" and "**tag**" tags, which are only available with Small Business, Corporate or Enterprise accounts. These data are included present in Shodan exports.
 
 Once in the database, it's easier to analyze the data and extract a list of machines with CVEs.
 
