@@ -5,7 +5,7 @@ import sys
 
 
 # Functions
-def initDB(verbose, database):
+def initdb(verbose, database):
     # Create database
     try:
         if verbose:
@@ -28,48 +28,45 @@ def initDB(verbose, database):
         conn.close()
 
 
-def parser(verbose, input, database):
+def parser(verbose, inputfile, database):
     if verbose:
         print("[+] Parsing file...")
     try:
-        with open(input) as jsonFile:
+        with open(inputfile) as jsonFile:
             for line in jsonFile:
-                jsonObject = json.loads(line)
+                jsonobject = json.loads(line)
 
                 # Mapping data
-                ip_str = jsonObject.get('ip_str')
-                asn = jsonObject.get('asn')
-                try:
-                    domains = jsonObject.get('domains')
+                ip_str = jsonobject.get('ip_str')
+                asn = jsonobject.get('asn')
+                if jsonobject.get('domains') is not None:
+                    domains = jsonobject.get('domains')
                     domains = " ".join(domains)
-                except:
+                else:
                     domains = None
-                hostnames = jsonObject.get('hostnames')
+                hostnames = jsonobject.get('hostnames')
                 hostnames = " ".join(hostnames)
-                org = jsonObject.get('org')
-                timestamp = jsonObject.get('timestamp')
-                isp = jsonObject.get('isp')
-                os = jsonObject.get('os')
-                product = jsonObject.get('product')
-                version = jsonObject.get('version')
-                transport = jsonObject.get('transport')
-                port = jsonObject.get('port')
-                data = jsonObject.get('data')
-                city = jsonObject['location']['city']
-                region_code = jsonObject['location']['region_code']
-                area_code = jsonObject['location']['area_code']
-                country_code = jsonObject['location']['country_code']
-                country_name = jsonObject['location']['country_name']
-                try:
-                    nbvulns = len(jsonObject.get('vulns'))
-                except:
+                org = jsonobject.get('org')
+                timestamp = jsonobject.get('timestamp')
+                isp = jsonobject.get('isp')
+                os = jsonobject.get('os')
+                product = jsonobject.get('product')
+                version = jsonobject.get('version')
+                transport = jsonobject.get('transport')
+                port = jsonobject.get('port')
+                data = jsonobject.get('data')
+                city = jsonobject['location']['city']
+                region_code = jsonobject['location']['region_code']
+                area_code = jsonobject['location']['area_code']
+                country_code = jsonobject['location']['country_code']
+                country_name = jsonobject['location']['country_name']
+                if jsonobject.get('vulns') is not None:
+                    nbvulns = len(jsonobject.get('vulns'))
+                else:
                     nbvulns = None
-
-                try:
-                    tags = jsonObject.get('tags')
+                tags = jsonobject.get('tags')
+                if tags is not None:
                     tags = " ".join(tags)
-                except:
-                    tags = None
 
                 # Insertion services
                 try:
@@ -80,7 +77,7 @@ def parser(verbose, input, database):
                         (ip_str, asn, domains, hostnames, org, timestamp, isp, os, product, version, transport, port,
                          data,
                          city, region_code, area_code, country_code, country_name, nbvulns, tags,))
-                    id = cursor.lastrowid
+                    # id = cursor.lastrowid
                     # print('Last id insert : %d' % id, "-", line)
                     conn.commit()
                 except sqlite3.IntegrityError:
@@ -92,12 +89,12 @@ def parser(verbose, input, database):
                     raise e
                 finally:
                     conn.close()
-                if nbvulns != None:
-                    for i in jsonObject['vulns']:
+                if nbvulns is not None:
+                    for i in jsonobject['vulns']:
                         cveid = i
-                        verified = jsonObject['vulns'][i]['verified']
-                        cvss = jsonObject['vulns'][i]['cvss']
-                        summary = jsonObject['vulns'][i]['summary']
+                        verified = jsonobject['vulns'][i]['verified']
+                        cvss = jsonobject['vulns'][i]['cvss']
+                        summary = jsonobject['vulns'][i]['summary']
 
                         # Insertion vulnerabilities
                         try:
@@ -106,7 +103,7 @@ def parser(verbose, input, database):
                             cursor.execute(
                                 'INSERT OR IGNORE INTO vulnerabilities (ip, cveid, verified, cvss, summary) VALUES (?, ?, ?, ?, ?)',
                                 (ip_str, cveid, verified, cvss, summary,))
-                            id = cursor.lastrowid
+                            # id = cursor.lastrowid
                             # print('Last id insert : %d' % id, "-", line)
                             conn.commit()
                         except sqlite3.IntegrityError:
@@ -129,10 +126,10 @@ def parser(verbose, input, database):
 @click.version_option(version='1.0.0', prog_name="Shodan Parser")
 @click.option('--verbose', '-v', is_flag=True, help="Verbose mode")
 @click.option('--database', '-d', default='shodan.db', help='Database name', show_default=True, type=str)
-@click.option('--input', '-i', help='Json export file from Shodan', required=True, type=str)
-def cli(verbose, database, input):
-    initDB(verbose, database)
-    parser(verbose, input, database)
+@click.option('--inputfile', '-i', help='Json export file from Shodan', required=True, type=str)
+def cli(verbose, database, inputfile):
+    initdb(verbose, database)
+    parser(verbose, inputfile, database)
 
 
 if __name__ == '__main__':
