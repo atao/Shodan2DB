@@ -1,7 +1,8 @@
 import json
 import sqlite3
-import click
 import sys
+
+import click
 
 
 # Functions
