@@ -19,7 +19,7 @@ def initdb(verbose, database):
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS "vulnerabilities" ( "ip" TEXT, "cveid" TEXT, "verified" NUMERIC, "cvss" REAL, "summary" TEXT)""")
         cursor.execute(
-            """CREATE VIEW IF NOT EXISTS "Summary" AS select ip, port, product, version, transport, isp, city, tags, nbvulns from services ORDER BY nbvulns DESC""")
+            """CREATE VIEW IF NOT EXISTS "Summary" AS select ip, hostnames, port, product, version, transport, isp, city, tags, nbvulns from services ORDER BY nbvulns DESC""")
         conn.commit()
     except Exception as e:
         print("Error")
