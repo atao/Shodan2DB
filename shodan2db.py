@@ -185,9 +185,11 @@ def export(verbose, exportfile, database):
 @click.option('--database', '-d', default='shodan.db', help='Database name', show_default=True, type=str)
 @click.option('--inputfile', '-i', help='Json export file from Shodan', required=True, type=str)
 @click.option('--exportfile', '-o', default='shodan.html', help='Output report HTML file', show_default=True, type=str)
-def cli(verbose, database, inputfile, exportfile):
-    initdb(verbose, database)
-    parser(verbose, inputfile, database)
+@click.option('--report-only', '-r', 'report', is_flag=True, help="Verbose mode")
+def cli(verbose, database, inputfile, exportfile, report):
+    if not report:
+        initdb(verbose, database)
+        parser(verbose, inputfile, database)
     export(verbose, exportfile, database)
 
 
