@@ -162,3 +162,4 @@ secrets.py
 *.db
 *.json
 *.html
+.DS_Store
