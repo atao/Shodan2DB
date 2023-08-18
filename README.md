@@ -44,7 +44,7 @@ Download your results.
 
 Then import the results into the database using the command :
 ```
-main.py -i <json_file>
+shodan2db.py -i <json_file>
 ```
 
 **Tags** and **vulns** are visible directly in the **Summary** table.
