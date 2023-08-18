@@ -133,20 +133,24 @@ def parser(verbose, inputfile, database):
 
 
 def export(verbose, exportfile, database):
-    conn = sqlite3.connect(database)
-    cursor = conn.cursor()
-    cursor.execute(
-        """SELECT DISTINCT ip, hostnames, isp, city, tags, nbvulns FROM summary
-        WHERE nbvulns IS NOT NULL ORDER BY nbvulns DESC""")
-    hosts_list = cursor.fetchall()
-    cursor.execute("""SELECT ip, cveid, cvss, summary FROM vulnerabilities ORDER BY ip, cvss DESC""")
-    vulns_list = cursor.fetchall()
-    cursor.execute(
-        """SELECT ip, port, product, version, transport FROM services
-        WHERE ip IN (SELECT ip FROM summary WHERE nbvulns is not NULL) ORDER BY ip""")
-    services_list = cursor.fetchall()
-    cursor.execute("""SELECT cveid, count(*) as count from vulnerabilities GROUP BY cveid ORDER BY count DESC""")
-    cves_list = cursor.fetchall()
+    try:
+        conn = sqlite3.connect(database)
+        cursor = conn.cursor()
+        cursor.execute(
+            """SELECT DISTINCT ip, hostnames, isp, city, tags, nbvulns FROM summary
+            WHERE nbvulns IS NOT NULL ORDER BY nbvulns DESC""")
+        hosts_list = cursor.fetchall()
+        cursor.execute("""SELECT ip, cveid, cvss, summary FROM vulnerabilities ORDER BY ip, cvss DESC""")
+        vulns_list = cursor.fetchall()
+        cursor.execute(
+            """SELECT ip, port, product, version, transport FROM services
+            WHERE ip IN (SELECT ip FROM summary WHERE nbvulns is not NULL) ORDER BY ip""")
+        services_list = cursor.fetchall()
+        cursor.execute("""SELECT cveid, count(*) as count from vulnerabilities GROUP BY cveid ORDER BY count DESC""")
+        cves_list = cursor.fetchall()
+    except sqlite3.OperationalError:
+        print("[!] {} not found! Please provide a valid database name with -d".format(database))
+        exit(1)
 
     # Transformation of lists into dictionaries for easier template editing.
     hosts_data = []
@@ -181,11 +185,11 @@ def export(verbose, exportfile, database):
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.version_option(version='1', prog_name="Shodan2DB")
-@click.option('--verbose', '-v', is_flag=True, help="Verbose mode")
-@click.option('--database', '-d', default='shodan.db', help='Database name', show_default=True, type=str)
 @click.option('--inputfile', '-i', help='Json export file from Shodan', required=True, type=str)
+@click.option('--database', '-d', default='shodan.db', help='Database name', show_default=True, type=str)
 @click.option('--exportfile', '-o', default='shodan.html', help='Output report HTML file', show_default=True, type=str)
-@click.option('--report-only', '-r', 'report', is_flag=True, help="Verbose mode")
+@click.option('--report-only', '-r', 'report', is_flag=True, help="Only export report from database.")
+@click.option('--verbose', '-v', is_flag=True, help="Verbose mode")
 def cli(verbose, database, inputfile, exportfile, report):
     if not report:
         initdb(verbose, database)
@@ -198,5 +202,3 @@ if __name__ == '__main__':
         cli.main(['--help'])
     else:
         cli()
-
-# SELECT cveid, count(*) as count from vulnerabilities GROUP BY cveid ORDER BY count DESC
