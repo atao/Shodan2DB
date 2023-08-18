@@ -1,0 +1,106 @@
+{# templates/results.html #}
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shodan2DB</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+</head>
+<body>
+<section class="section">
+    <div class="container">
+        <div class="has-text-centered is-size-1">
+            Surface exposure report
+        </div>
+        <br>
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="heading">Hosts</p>
+                    <p class="title">{{ hosts |length }}</p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="heading">Vulnerabilities</p>
+                    <p class="title">{{ vulns |length }}</p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="heading">Products</p>
+                    <p class="title">{{ services |length }}</p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="heading">CVEs</p>
+                    <p class="title">{{ cves |length }}</p>
+                </div>
+            </div>
+        </nav>
+
+        {% for host in hosts %}
+        <div class="tile is-parent">
+            <article class="tile is-child notification is-info">
+
+
+                <p class="title">{{ host.ip }} <span class="tag is-rounded is-large">{{ host.nbvulns }}</span></p>
+                <p class="subtitle">{{ host.hostnames }}</p>
+                <div class="content">
+                    <p>
+                        <b>ISP</b> : {{ host.isp }}
+                        <br><b>City</b> : {{ host.city }}
+                        <br><b>Tags</b> : {{ host.tags }}
+                    </p>
+                </div>
+            </article>
+        </div>
+        <table class="table is-bordered">
+            <thead>
+            <tr>
+                <th>Product</th>
+                <th>Version</th>
+                <th>Port</th>
+                <th>Transport</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for service in services %}
+            {% if service.ip == host.ip %}
+            <tr>
+                <td>{{ service.product }}</td>
+                <td>{{ service.version }}</td>
+                <td>{{ service.port }}</td>
+                <td>{{ service.transport }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+        <table class="table is-bordered">
+            <thead>
+            <tr>
+                <th>CVE</th>
+                <th>Score</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for vuln in vulns %}
+            {% if vuln.ip == host.ip %}
+            <tr>
+                <td>{{ vuln.cveid }}</td>
+                <td>{{ vuln.cvss }}</td>
+                <td>{{ vuln.summary }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+    </div>
+</section>
+</body>
+</html>
