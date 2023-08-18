@@ -185,11 +185,11 @@ def export(verbose, exportfile, database):
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.version_option(version='1', prog_name="Shodan2DB")
-@click.option('--inputfile', '-i', help='Json export file from Shodan', required=True, type=str)
-@click.option('--database', '-d', default='shodan.db', help='Database name', show_default=True, type=str)
-@click.option('--exportfile', '-o', default='shodan.html', help='Output report HTML file', show_default=True, type=str)
+@click.option('--inputfile', '-i', help='Json export file from Shodan.', required=True, type=str)
+@click.option('--database', '-d', default='shodan.db', help='Database name.', show_default=True, type=str)
+@click.option('--exportfile', '-o', default='shodan.html', help='Output report HTML file.', show_default=True, type=str)
 @click.option('--report-only', '-r', 'report', is_flag=True, help="Only export report from database.")
-@click.option('--verbose', '-v', is_flag=True, help="Verbose mode")
+@click.option('--verbose', '-v', is_flag=True, help="Verbose mode.")
 def cli(verbose, database, inputfile, exportfile, report):
     if not report:
         initdb(verbose, database)

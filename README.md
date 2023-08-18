@@ -17,14 +17,15 @@ pip install -r requirements.txt
 ## Usage and options
 
 ```
-Usage: main.py [OPTIONS]
+Usage: shodan2db.py [OPTIONS]
 
 Options:
   --version              Show the version and exit.
-  -v, --verbose          Verbose mode
-  -d, --database TEXT    Database name  [default: shodan.db]
-  -i, --inputfile TEXT   Json export file from Shodan  [required]
-  -o, --exportfile TEXT  Output report HTML file  [default: shodan.html]
+  -i, --inputfile TEXT   Json export file from Shodan.  [required]
+  -d, --database TEXT    Database name.  [default: shodan.db]
+  -o, --exportfile TEXT  Output report HTML file.  [default: shodan.html]
+  -r, --report-only      Only export report from database.
+  -v, --verbose          Verbose mode.
   -h, --help             Show this message and exit.
 ```
 
