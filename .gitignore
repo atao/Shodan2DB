@@ -161,3 +161,4 @@ cython_debug/
 secrets.py
 *.db
 *.json
+*.html
