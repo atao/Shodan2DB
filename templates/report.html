@@ -52,7 +52,9 @@
                     <p>
                         <b>ISP</b> : {{ host.isp }}
                         <br><b>City</b> : {{ host.city }}
+                        {% if host.tags %}
                         <br><b>Tags</b> : {{ host.tags }}
+                        {% endif %}
                     </p>
                 </div>
             </article>
