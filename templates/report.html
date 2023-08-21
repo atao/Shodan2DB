@@ -46,7 +46,7 @@
             <article class="tile is-child notification is-info">
 
 
-                <p class="title">{{ host.ip }} <span class="tag is-rounded is-large">{{ host.nbvulns }}</span></p>
+                <p><a href="https://www.shodan.io/host/{{ host.ip }}" class="title">{{ host.ip }}</a> <span class="tag is-rounded is-large">{{ host.nbvulns }}</span></p>
                 <p class="subtitle">{{ host.hostnames }}</p>
                 <div class="content">
                     <p>
