@@ -10,6 +10,9 @@ Exports bypass the restriction on "**vuln**" and "**tag**" tags, which are only 
 
 Once in the database, it's easier to analyze the data and extract a list of machines with CVEs.
 
+Generate a report of found CVEs with HTML template.
+Customize the report in `templates/` folder using jinja2.
+
 ## Requirements
 ```
 pip install -r requirements.txt
