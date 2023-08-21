@@ -146,7 +146,8 @@ def export(verbose, exportfile, database):
             """SELECT ip, port, product, version, transport FROM services
             WHERE ip IN (SELECT ip FROM summary WHERE nbvulns is not NULL) ORDER BY ip""")
         services_list = cursor.fetchall()
-        cursor.execute("""SELECT cveid, count(*) as count from vulnerabilities GROUP BY cveid ORDER BY count DESC""")
+        cursor.execute(
+            """SELECT cveid, count(*) as count, cvss, summary from vulnerabilities GROUP BY cveid ORDER BY count DESC, cvss DESC""")
         cves_list = cursor.fetchall()
     except sqlite3.OperationalError:
         print("[!] {} not found! Please provide a valid database name with -d".format(database))
@@ -165,8 +166,13 @@ def export(verbose, exportfile, database):
 
     vulns_data = []
     for row in vulns_list:
-        vulns = {"ip": row[0], "cveid": row[1], "cvss": row[2], "summary": row[3], }
+        vulns = {"ip": row[0], "cveid": row[1], "cvss": row[2], "summary": row[3]}
         vulns_data.append(vulns)
+
+    cves_data = []
+    for row in cves_list:
+        cves = {"cveid": row[0], "count": row[1], "cvss": row[2], "summary": row[3]}
+        cves_data.append(cves)
 
     environment = Environment(loader=FileSystemLoader("templates/"))
     template = environment.get_template("report.html")
@@ -175,7 +181,7 @@ def export(verbose, exportfile, database):
         hosts=hosts_data,
         services=services_data,
         vulns=vulns_data,
-        cves=cves_list
+        cves=cves_data
     )
     with open(filename, mode="w", encoding="utf-8") as message:
         message.write(content)
