@@ -1,5 +1,5 @@
+<!doctype html>
 {# templates/report.html #}
-
 <html>
 <head>
     <meta charset="utf-8">
@@ -25,6 +25,17 @@
                 <a class="navbar-item" href="#cve-list">CVE list</a>
             </div>
         </div>
+        <div class="navbar-end">
+            <div class="navbar-item">
+                <p class="control">
+                    <input autofocus
+                           class="input is-info is-rounded" type="text" placeholder="Filter"
+                           id="searchbox"
+                           oninput="liveSearch()"
+                           placeholder="Filter"
+                           type="search">
+                </p>
+            </div>
     </nav>
     <nav id="vulns-list" class="level">
         <div class="level-item has-text-centered">
@@ -53,65 +64,67 @@
         </div>
     </nav>
     {% for host in hosts %}
-    <div class="tile is-parent">
-        <article class="tile is-child notification is-info">
-            <p><a href="https://www.shodan.io/host/{{ host.ip }}" class="title">{{ host.ip }}</a> <span
-                    class="tag is-rounded is-large">{{ host.nbvulns }}</span></p>
-            <p class="subtitle">{{ host.hostnames }}</p>
-            <div class="content">
-                <p>
-                    <b>ISP</b> : {{ host.isp }}
-                    <br><b>City</b> : {{ host.city }}
-                    {% if host.tags %}
-                    <br><b>Tags</b> : {{ host.tags }}
-                    {% endif %}
-                </p>
-            </div>
-        </article>
-    </div>
-    <table class="table is-hoverable is-bordered">
-        <thead>
-        <tr>
-            <th>Product</th>
-            <th>Version</th>
-            <th>Port</th>
-            <th>Transport</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for service in services %}
-        {% if service.ip == host.ip %}
-        <tr>
-            <td>{{ service.product }}</td>
-            <td>{{ service.version }}</td>
-            <td><a href="https://www.shodan.io/host/{{ host.ip }}#{{ service.port }}">{{ service.port }}</a>
-            </td>
-            <td>{{ service.transport }}</td>
-        </tr>
-        {% endif %}
-        {% endfor %}
-        </tbody>
-    </table>
-    <table class="table is-hoverable is-bordered">
-        <thead>
-        <tr>
-            <th>CVE</th>
-            <th>CVSS</th>
-            <th>Description</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for vuln in vulns %}
-        {% if vuln.ip == host.ip %}
-        <tr>
-            <td>{{ vuln.cveid }}</td>
-            <td>{{ vuln.cvss }}</td>
-            <td>{{ vuln.summary }}</td>
-        </tr>
-        {% endif %}
-        {% endfor %}
-        </tbody>
-    </table>
+    <section class="section">
+        <div class="tile is-parent">
+            <article class="tile is-child notification is-info">
+                <p><a href="https://www.shodan.io/host/{{ host.ip }}" class="title">{{ host.ip }}</a> <span
+                        class="tag is-rounded is-large">{{ host.nbvulns }}</span></p>
+                <p class="subtitle">{{ host.hostnames }}</p>
+                <div class="content">
+                    <p>
+                        <b>ISP</b> : {{ host.isp }}
+                        <br><b>City</b> : {{ host.city }}
+                        {% if host.tags %}
+                        <br><b>Tags</b> : {{ host.tags }}
+                        {% endif %}
+                    </p>
+                </div>
+            </article>
+        </div>
+        <table class="table is-hoverable is-bordered">
+            <thead>
+            <tr>
+                <th>Product</th>
+                <th>Version</th>
+                <th>Port</th>
+                <th>Transport</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for service in services %}
+            {% if service.ip == host.ip %}
+            <tr>
+                <td>{{ service.product }}</td>
+                <td>{{ service.version }}</td>
+                <td><a href="https://www.shodan.io/host/{{ host.ip }}#{{ service.port }}">{{ service.port }}</a>
+                </td>
+                <td>{{ service.transport }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+        <table class="table is-hoverable is-bordered">
+            <thead>
+            <tr>
+                <th>CVE</th>
+                <th>CVSS</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for vuln in vulns %}
+            {% if vuln.ip == host.ip %}
+            <tr>
+                <td>{{ vuln.cveid }}</td>
+                <td>{{ vuln.cvss }}</td>
+                <td>{{ vuln.summary }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
     {% endfor %}
 
     <p id="cve-list" class="title is-3 is-spaced">Security vulnerability (CVE) list</p>
@@ -137,4 +150,25 @@
     </table>
 </div>
 </body>
+<script>
+    function liveSearch() {
+    let cards = document.querySelectorAll('.section')
+    let search_query = document.getElementById("searchbox").value;
+    for (var i = 0; i < cards.length; i++) {
+      if(cards[i].innerText.toLowerCase()
+        .includes(search_query.toLowerCase())) {
+          cards[i].classList.remove("is-hidden");
+    } else {
+        cards[i].classList.add("is-hidden");
+    }
+  }
+}
+let typingTimer;
+let typeInterval = 500; // Half a second
+let searchInput = document.getElementById('searchbox');
+searchInput.addEventListener('keyup', () => {
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(liveSearch, typeInterval);
+});
+</script>
 </html>
