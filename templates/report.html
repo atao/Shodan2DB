@@ -74,7 +74,7 @@
             <tr>
                 <td>{{ service.product }}</td>
                 <td>{{ service.version }}</td>
-                <td>{{ service.port }}</td>
+                <td><a href="https://www.shodan.io/host/{{ host.ip }}#{{ service.port }}">{{ service.port }}</a></td>
                 <td>{{ service.transport }}</td>
             </tr>
             {% endif %}
