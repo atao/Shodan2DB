@@ -11,7 +11,7 @@ Exports bypass the restriction on "**vuln**" and "**tag**" tags, which are only 
 Once in the database, it's easier to analyze the data and extract a list of machines with CVEs.
 
 Generate a report of found CVEs with HTML template.
-Customize the report in `templates/` folder using jinja2.
+Customize the report in `templates/` folder using jinja2 and Bulma CSS.
 
 ## Requirements
 ```
@@ -54,3 +54,7 @@ shodan2db.py -i <json_file>
 **Tags** and **vulns** are visible directly in the **Summary** table.
 
 <img src="img/Summary.png">
+
+Example of report :
+
+<img src="img/report.png">
