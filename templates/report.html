@@ -118,7 +118,7 @@
             {% for vuln in vulns %}
             {% if vuln.ip == host.ip %}
             <tr>
-                <td><a href="https://nvd.nist.gov/vuln/detail/{{ cve.cveid }}">{{ cve.cveid }}</a></td>
+                <td><a href="https://nvd.nist.gov/vuln/detail/{{ vuln.cveid }}">{{ vuln.cveid }}</a></td>
                 <td>{{ vuln.cvss }}</td>
                 <td>{{ vuln.summary }}</td>
             </tr>
