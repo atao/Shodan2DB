@@ -142,7 +142,7 @@
         <tbody>
         {% for cve in cves %}
         <tr>
-            <td>{{ cve.cveid }}</td>
+            <td><a href="https://nvd.nist.gov/vuln/detail/{{ cve.cveid }}">{{ cve.cveid }}</a></td>
             <td>{{ cve.count }}</td>
             <td>{{ cve.cvss }}</td>
             <td>{{ cve.summary }}</td>
