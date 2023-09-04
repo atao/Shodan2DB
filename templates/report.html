@@ -82,7 +82,7 @@
             <tbody>
             {% for host in hosts %}
             <tr>
-                <td>{{ host.ip }}</td>
+                <td><a href="#{{ host.ip }}">{{ host.ip }}</a></td>
                 <td>{{ host.hostnames }}</td>
                 <td>{{ host.isp }}</td>
                 <td>{{ host.city }}</td>
@@ -97,7 +97,7 @@
     <section class="section">
         <p id="vulns-list" class="title is-3 is-spaced">Vulnerabilities</p>
         {% for host in hosts %}
-        <div class="tile is-parent">
+        <div id="{{ host.ip }}" class="tile is-parent">
             <article class="tile is-child notification is-info">
                 <p><a href="https://www.shodan.io/host/{{ host.ip }}" class="title">{{ host.ip }}</a> <span
                         class="tag is-rounded is-large">{{ host.nbvulns }}</span></p>
