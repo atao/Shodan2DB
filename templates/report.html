@@ -21,8 +21,9 @@
         </div>
         <div class="navbar-menu">
             <div class="navbar-start">
+                <a class="navbar-item" href="#hosts-list">Hosts</a>
                 <a class="navbar-item" href="#vulns-list">Vulnerabilities</a>
-                <a class="navbar-item" href="#cve-list">CVE list</a>
+                <a class="navbar-item" href="#cve-list">CVE</a>
             </div>
         </div>
         <div class="navbar-end">
@@ -39,7 +40,7 @@
                 </p>
             </div>
     </nav>
-    <nav id="vulns-list" class="level">
+    <nav class="level">
         <div class="level-item has-text-centered">
             <div>
                 <p class="heading">Hosts</p>
@@ -65,8 +66,37 @@
             </div>
         </div>
     </nav>
-    {% for host in hosts %}
+    <div class="section">
+        <p id="hosts-list" class="title is-3 is-spaced">Hosts</p>
+        <table class="table is-hoverable is-bordered">
+            <thead>
+            <tr>
+                <th>IP</th>
+                <th>Hostnames</th>
+                <th>ISP</th>
+                <th>City</th>
+                <th>Tags</th>
+                <th>Vulns</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for host in hosts %}
+            <tr>
+                <td>{{ host.ip }}</td>
+                <td>{{ host.hostnames }}</td>
+                <td>{{ host.isp }}</td>
+                <td>{{ host.city }}</td>
+                <td>{{ host.tags }}</td>
+                <td>{{ host.nbvulns }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
     <section class="section">
+        <p id="vulns-list" class="title is-3 is-spaced">Vulnerabilities</p>
+        {% for host in hosts %}
         <div class="tile is-parent">
             <article class="tile is-child notification is-info">
                 <p><a href="https://www.shodan.io/host/{{ host.ip }}" class="title">{{ host.ip }}</a> <span
@@ -129,7 +159,7 @@
     </section>
     {% endfor %}
 
-    <p id="cve-list" class="title is-3 is-spaced">Security vulnerability (CVE) list</p>
+    <p id="cve-list" class="title is-3 is-spaced">Security vulnerability (CVE)</p>
     <table class="table is-hoverable is-bordered">
         <thead>
         <tr>
