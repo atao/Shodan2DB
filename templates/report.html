@@ -34,9 +34,7 @@
                            id="searchbox"
                            oninput="liveSearch()"
                            placeholder="Filter"
-                           type="search"
-                           onclick="document.getElementById('searchbox').value = ''"
-                    >
+                           type="search"/>
                 </p>
             </div>
     </nav>
@@ -66,37 +64,38 @@
             </div>
         </div>
     </nav>
-    <div class="section">
-        <p id="hosts-list" class="title is-3 is-spaced">Hosts</p>
-        <table class="table is-hoverable is-bordered is-striped">
-            <thead>
-            <tr>
-                <th>IP</th>
-                <th>Hostnames</th>
-                <th>ISP</th>
-                <th>City</th>
-                <th>Tags</th>
-                <th>Vulns</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for host in hosts %}
-            <tr>
-                <td><a href="#{{ host.ip }}">{{ host.ip }}</a></td>
-                <td>{{ host.hostnames }}</td>
-                <td>{{ host.isp }}</td>
-                <td>{{ host.city }}</td>
-                <td>{{ host.tags }}</td>
-                <td>{{ host.nbvulns }}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
 
-    <section class="section">
-        <p id="vulns-list" class="title is-3 is-spaced">Vulnerabilities</p>
+    <p id="hosts-list" class="title is-3 is-spaced">Hosts</p>
+    <table class="table is-hoverable is-bordered is-striped">
+        <thead>
+        <tr>
+            <th>IP</th>
+            <th>Hostnames</th>
+            <th>ISP</th>
+            <th>City</th>
+            <th>Tags</th>
+            <th>Vulns</th>
+        </tr>
+        </thead>
+        <tbody>
         {% for host in hosts %}
+        <tr>
+            <td><a href="#{{ host.ip }}">{{ host.ip }}</a></td>
+            <td>{{ host.hostnames }}</td>
+            <td>{{ host.isp }}</td>
+            <td>{{ host.city }}</td>
+            <td>{{ host.tags }}</td>
+            <td>{{ host.nbvulns }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <br>
+
+    <p id="vulns-list" class="title is-3 is-spaced">Vulnerabilities</p>
+    {% for host in hosts %}
+    <section class="section">
         <div id="{{ host.ip }}" class="tile is-parent">
             <article class="tile is-child notification is-info">
                 <p><a href="https://www.shodan.io/host/{{ host.ip }}" class="title">{{ host.ip }}</a> <span
@@ -159,6 +158,7 @@
     </section>
     {% endfor %}
 
+
     <p id="cve-list" class="title is-3 is-spaced">Security vulnerability (CVE)</p>
     <table class="table is-hoverable is-bordered">
         <thead>
@@ -180,11 +180,11 @@
         {% endfor %}
         </tbody>
     </table>
-</div>
+
 </body>
 <script>
     function liveSearch() {
-    let cards = document.querySelectorAll('.section')
+ let cards = document.querySelectorAll('.section')
     let search_query = document.getElementById("searchbox").value;
     for (var i = 0; i < cards.length; i++) {
       if(cards[i].innerText.toLowerCase()
