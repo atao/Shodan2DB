@@ -18,25 +18,38 @@
             <a class="navbar-item has-text-weight-semibold" href="#top">
                 Shodan2DB
             </a>
+            <a role="button" class="navbar-burger" data-target="navMenu" aria-label="menu" aria-expanded="false">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
         </div>
-        <div class="navbar-menu">
+        <div class="navbar-menu" id="navMenu">
             <div class="navbar-start">
-                <a class="navbar-item" href="#hosts-list">Hosts</a>
-                <a class="navbar-item" href="#vulns-list">Vulnerabilities</a>
-                <a class="navbar-item" href="#cve-list">CVE</a>
+                <a class="navbar-item" href="#hosts-list">
+                    Hosts
+                </a>
+                <a class="navbar-item" href="#vulns-list">
+                    Vulnerabilities
+                </a>
+                <a class="navbar-item" href="#cve-list">
+                    CVE
+                </a>
+            </div>
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <p class="control">
+                        <input autofocus
+                               class="input is-info is-rounded" type="text" placeholder="Filter"
+                               id="searchbox"
+                               oninput="liveSearch()"
+                               placeholder="Filter"
+                               type="search"
+                        />
+                    </p>
+                </div>
             </div>
         </div>
-        <div class="navbar-end">
-            <div class="navbar-item">
-                <p class="control">
-                    <input autofocus
-                           class="input is-info is-rounded" type="text" placeholder="Filter"
-                           id="searchbox"
-                           oninput="liveSearch()"
-                           placeholder="Filter"
-                           type="search"/>
-                </p>
-            </div>
     </nav>
     <nav class="level">
         <div class="level-item has-text-centered">
@@ -201,6 +214,40 @@ let searchInput = document.getElementById('searchbox');
 searchInput.addEventListener('keyup', () => {
   clearTimeout(typingTimer);
   typingTimer = setTimeout(liveSearch, typeInterval);
+});
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+  // Get all "navbar-burger" elements
+  const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+
+  // Add a click event on each of them
+  $navbarBurgers.forEach( el => {
+    el.addEventListener('click', () => {
+
+      // Get the target from the "data-target" attribute
+      const target = el.dataset.target;
+      const $target = document.getElementById(target);
+
+      // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+      el.classList.toggle('is-active');
+      $target.classList.toggle('is-active');
+
+    });
+  });
+
+});
+$(document).ready(function() {
+
+  // Check for click events on the navbar burger icon
+  $(".navbar-burger").click(function() {
+
+      // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+      $(".navbar-burger").toggleClass("is-active");
+      $(".navbar-menu").toggleClass("is-active");
+
+  });
 });
 </script>
 </html>
