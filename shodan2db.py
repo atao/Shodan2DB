@@ -26,8 +26,8 @@ def initdb(verbose, database):
         cursor.execute(
             """CREATE VIEW IF NOT EXISTS "Summary" AS select ip, hostnames, port, product, version, transport, isp,
             city, tags, nbvulns FROM services ORDER BY nbvulns DESC""")
-        cursor.execute("""CREATE INDEX "ip_index" ON services("ip");""")
-        cursor.execute("""CREATE INDEX "nbvulns_index" ON services("nbvulns");""")
+        cursor.execute("""CREATE INDEX IF NOT EXISTS "ip_index" ON services("ip");""")
+        cursor.execute("""CREATE INDEX IF NOT EXISTS "nbvulns_index" ON services("nbvulns");""")
         conn.commit()
     except Exception as e:
         print("Error")
