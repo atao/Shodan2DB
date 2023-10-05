@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Shodan2DB</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <!-- Bootstrap icon -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.2/font/bootstrap-icons.css">
 </head>
 <body class="has-navbar-fixed-top">
 <div class="container is-fluid">
@@ -38,14 +40,16 @@
             </div>
             <div class="navbar-end">
                 <div class="navbar-item">
-                    <p class="control">
+                    <p class="control has-icons-left">
                         <input autofocus
                                class="input is-info is-rounded" type="text" placeholder="Filter"
                                id="searchbox"
                                oninput="liveSearch()"
                                placeholder="Filter"
-                               type="search"
-                        />
+                               type="search">
+                        <span class="icon is-medium is-left">
+                            <i class="bi bi-search"></i>
+                        </span>
                     </p>
                 </div>
             </div>
@@ -92,14 +96,14 @@
         </thead>
         <tbody>
         {% for host in hosts %}
-        <tr>
-            <td><a href="#{{ host.ip }}">{{ host.ip }}</a></td>
-            <td>{{ host.hostnames }}</td>
-            <td>{{ host.isp }}</td>
-            <td>{{ host.city }}</td>
-            <td>{{ host.tags }}</td>
-            <td>{{ host.nbvulns }}</td>
-        </tr>
+            <tr>
+                <td><a href="#{{ host.ip }}">{{ host.ip }}</a></td>
+                <td>{{ host.hostnames }}</td>
+                <td>{{ host.isp }}</td>
+                <td>{{ host.city }}</td>
+                <td>{{ host.tags }}</td>
+                <td>{{ host.nbvulns }}</td>
+            </tr>
         {% endfor %}
         </tbody>
     </table>
@@ -108,67 +112,68 @@
 
     <p id="vulns-list" class="title is-3 is-spaced">Vulnerabilities</p>
     {% for host in hosts %}
-    <section class="section">
-        <div id="{{ host.ip }}" class="tile is-parent">
-            <article class="tile is-child notification is-info">
-                <p><a href="https://www.shodan.io/host/{{ host.ip }}" class="title">{{ host.ip }}</a> <span
-                        class="tag is-rounded is-large">{{ host.nbvulns }}</span></p>
-                <p class="subtitle">{{ host.hostnames }}</p>
-                <div class="content">
-                    <p>
-                        <b>ISP</b> : {{ host.isp }}
-                        <br><b>City</b> : {{ host.city }}
-                        {% if host.tags %}
-                        <br><b>Tags</b> : {{ host.tags }}
-                        {% endif %}
-                    </p>
-                </div>
-            </article>
-        </div>
-        <table class="table is-hoverable is-bordered is-striped">
-            <thead>
-            <tr>
-                <th>Product</th>
-                <th>Version</th>
-                <th>Port</th>
-                <th>Transport</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for service in services %}
-            {% if service.ip == host.ip %}
-            <tr>
-                <td>{{ service.product }}</td>
-                <td>{{ service.version }}</td>
-                <td><a href="https://www.shodan.io/host/{{ host.ip }}#{{ service.port }}">{{ service.port }}</a>
-                </td>
-                <td>{{ service.transport }}</td>
-            </tr>
-            {% endif %}
-            {% endfor %}
-            </tbody>
-        </table>
-        <table class="table is-hoverable is-bordered">
-            <thead>
-            <tr>
-                <th>CVE</th>
-                <th>CVSS</th>
-                <th>Description</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for vuln in vulns %}
-            {% if vuln.ip == host.ip %}
-            <tr>
-                <td><a href="https://nvd.nist.gov/vuln/detail/{{ vuln.cveid }}">{{ vuln.cveid }}</a></td>
-                <td>{{ vuln.cvss }}</td>
-                <td>{{ vuln.summary }}</td>
-            </tr>
-            {% endif %}
-            {% endfor %}
-            </tbody>
-        </table>
-    </section>
+        <section class="section">
+            <div id="{{ host.ip }}" class="tile is-parent">
+                <article class="tile is-child notification is-info">
+                    <p><a href="https://www.shodan.io/host/{{ host.ip }}" class="title">{{ host.ip }}</a> <span
+                            class="tag is-rounded is-large">{{ host.nbvulns }}</span></p>
+                    <p class="subtitle">{{ host.hostnames }}</p>
+                    <div class="content">
+                        <p>
+                            <b>ISP</b> : {{ host.isp }}
+                            <br><b>City</b> : {{ host.city }}
+                            {% if host.tags %}
+                                <br><b>Tags</b> : {{ host.tags }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </article>
+            </div>
+            <table class="table is-hoverable is-bordered is-striped">
+                <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Version</th>
+                    <th>Port</th>
+                    <th>Transport</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for service in services %}
+                    {% if service.ip == host.ip %}
+                        <tr>
+                            <td>{{ service.product }}</td>
+                            <td>{{ service.version }}</td>
+                            <td>
+                                <a href="https://www.shodan.io/host/{{ host.ip }}#{{ service.port }}">{{ service.port }}</a>
+                            </td>
+                            <td>{{ service.transport }}</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+            <table class="table is-hoverable is-bordered">
+                <thead>
+                <tr>
+                    <th>CVE</th>
+                    <th>CVSS</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for vuln in vulns %}
+                    {% if vuln.ip == host.ip %}
+                        <tr>
+                            <td><a href="https://nvd.nist.gov/vuln/detail/{{ vuln.cveid }}">{{ vuln.cveid }}</a></td>
+                            <td>{{ vuln.cvss }}</td>
+                            <td>{{ vuln.summary }}</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </section>
     {% endfor %}
 
 
@@ -184,12 +189,12 @@
         </thead>
         <tbody>
         {% for cve in cves %}
-        <tr>
-            <td><a href="https://nvd.nist.gov/vuln/detail/{{ cve.cveid }}">{{ cve.cveid }}</a></td>
-            <td>{{ cve.count }}</td>
-            <td>{{ cve.cvss }}</td>
-            <td>{{ cve.summary }}</td>
-        </tr>
+            <tr>
+                <td><a href="https://nvd.nist.gov/vuln/detail/{{ cve.cveid }}">{{ cve.cveid }}</a></td>
+                <td>{{ cve.count }}</td>
+                <td>{{ cve.cvss }}</td>
+                <td>{{ cve.summary }}</td>
+            </tr>
         {% endfor %}
         </tbody>
     </table>
@@ -197,57 +202,58 @@
 </body>
 <script>
     function liveSearch() {
- let cards = document.querySelectorAll('.section')
-    let search_query = document.getElementById("searchbox").value;
-    for (var i = 0; i < cards.length; i++) {
-      if(cards[i].innerText.toLowerCase()
-        .includes(search_query.toLowerCase())) {
-          cards[i].classList.remove("is-hidden");
-    } else {
-        cards[i].classList.add("is-hidden");
+        let cards = document.querySelectorAll('.section')
+        let search_query = document.getElementById("searchbox").value;
+        for (var i = 0; i < cards.length; i++) {
+            if (cards[i].innerText.toLowerCase()
+                .includes(search_query.toLowerCase())) {
+                cards[i].classList.remove("is-hidden");
+            } else {
+                cards[i].classList.add("is-hidden");
+            }
+        }
     }
-  }
-}
-let typingTimer;
-let typeInterval = 500; // Half a second
-let searchInput = document.getElementById('searchbox');
-searchInput.addEventListener('keyup', () => {
-  clearTimeout(typingTimer);
-  typingTimer = setTimeout(liveSearch, typeInterval);
-});
+
+    let typingTimer;
+    let typeInterval = 500; // Half a second
+    let searchInput = document.getElementById('searchbox');
+    searchInput.addEventListener('keyup', () => {
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(liveSearch, typeInterval);
+    });
 </script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
 
-  // Get all "navbar-burger" elements
-  const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+        // Get all "navbar-burger" elements
+        const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
 
-  // Add a click event on each of them
-  $navbarBurgers.forEach( el => {
-    el.addEventListener('click', () => {
+        // Add a click event on each of them
+        $navbarBurgers.forEach(el => {
+            el.addEventListener('click', () => {
 
-      // Get the target from the "data-target" attribute
-      const target = el.dataset.target;
-      const $target = document.getElementById(target);
+                // Get the target from the "data-target" attribute
+                const target = el.dataset.target;
+                const $target = document.getElementById(target);
 
-      // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
-      el.classList.toggle('is-active');
-      $target.classList.toggle('is-active');
+                // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+                el.classList.toggle('is-active');
+                $target.classList.toggle('is-active');
+
+            });
+        });
 
     });
-  });
+    $(document).ready(function () {
 
-});
-$(document).ready(function() {
+        // Check for click events on the navbar burger icon
+        $(".navbar-burger").click(function () {
 
-  // Check for click events on the navbar burger icon
-  $(".navbar-burger").click(function() {
+            // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+            $(".navbar-burger").toggleClass("is-active");
+            $(".navbar-menu").toggleClass("is-active");
 
-      // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
-      $(".navbar-burger").toggleClass("is-active");
-      $(".navbar-menu").toggleClass("is-active");
-
-  });
-});
+        });
+    });
 </script>
 </html>
