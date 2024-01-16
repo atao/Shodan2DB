@@ -58,3 +58,13 @@ shodan2db.py -i <json_file>
 Example of report :
 
 <img src="img/report.png">
+
+## Development
+
+Use Shodan2DB as python class
+
+```python
+import shodan2db as sh
+
+sh.Shodan2DB.export(verbose=True, exportfile="test.html", database="test.db")
+```
