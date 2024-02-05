@@ -144,7 +144,7 @@ class Shodan2DB():
 
     # Static method to generate an HTML report from the database data
     @staticmethod
-    def export(verbose, exportfile, database):
+    def export(verbose, exportfile, database, template_file):
         if not exportfile.endswith(".html"):
             exportfile = "{}.html".format(exportfile)
         if not database.endswith(".db"):
@@ -192,7 +192,7 @@ class Shodan2DB():
             cves_data.append(cves)
 
         environment = Environment(loader=FileSystemLoader("templates/"))
-        template = environment.get_template("report.html")
+        template = environment.get_template(template_file)
         filename = exportfile
         content = template.render(
             hosts=hosts_data,
@@ -240,13 +240,15 @@ def validate_database(ctx, param, value):
               type=click.Path(exists=True), required=True)
 @click.option('--report-file', '-o', default='shodan.html', help='Output path for the HTML report file.',
               show_default=True, type=click.Path(writable=True))
+@click.option('--template-file', '-t', default='report.html', help='Template used for the report.',
+              show_default=True, type=click.Path(exists=True))
 @click.option('--verbose', '-v', is_flag=True, help="Verbose mode.")
-def export(verbose, database, report_file):
+def export(verbose, database, report_file, template_file):
     """
     Generate an HTML report from the data in the database.
     """
     # With the callback validation, no need for an explicit check here
-    Shodan2DB.export(verbose=verbose, database=database, exportfile=report_file)
+    Shodan2DB.export(verbose=verbose, database=database, exportfile=report_file, template_file=template_file)
 
 
 # Add the parse and export commands to the CLI group

@@ -49,11 +49,13 @@ Usage: shodan2db.py export [OPTIONS]
   Generate an HTML report from the data in the database.
 
 Options:
-  -d, --database PATH     Path to the SQLite database file.  [required]
-  -o, --report-file PATH  Output path for the HTML report file.  [default:
-                          shodan.html]
-  -v, --verbose           Verbose mode.
-  -h, --help              Show this message and exit.
+  -d, --database PATH       Path to the SQLite database file.  [required]
+  -o, --report-file PATH    Output path for the HTML report file.  [default:
+                            shodan.html]
+  -t, --template-file PATH  Template used for the report.  [default:
+                            report.html]
+  -v, --verbose             Verbose mode.
+  -h, --help                Show this message and exit.
 ```
 
 ## Quickstart
