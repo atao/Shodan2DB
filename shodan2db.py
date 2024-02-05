@@ -7,16 +7,11 @@ from jinja2 import Environment, FileSystemLoader
 
 
 class Shodan2DB():
-    # Constructor initializes the database and export file with the appropriate extensions
-    def __init__(self, database, exportfile):
-        if not database.endswith(".db"):
-            self.database = "{}.db".format(database)
-        if not exportfile.endswith(".html"):
-            self.exportfile = "{}.html".format(exportfile)
-
     # Static method to create tables and views in the SQLite database
     @staticmethod
     def prepare_database(verbose, database):
+        if not database.endswith(".db"):
+            database = "{}.db".format(database)
         # Create database
         try:
             if verbose:
@@ -48,6 +43,8 @@ class Shodan2DB():
     # Static method to parse a JSON file and insert data into the database
     @staticmethod
     def parser(verbose, inputfile, database):
+        if not database.endswith(".db"):
+            database = "{}.db".format(database)
         if verbose:
             print("[+] Parsing file...")
         try:
@@ -148,6 +145,10 @@ class Shodan2DB():
     # Static method to generate an HTML report from the database data
     @staticmethod
     def export(verbose, exportfile, database):
+        if not exportfile.endswith(".html"):
+            exportfile = "{}.html".format(exportfile)
+        if not database.endswith(".db"):
+            database = "{}.db".format(database)
         try:
             conn = sqlite3.connect(database)
             cursor = conn.cursor()
