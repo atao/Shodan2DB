@@ -83,6 +83,12 @@ Example of report :
 
 <img src="img/report.png">
 
+## Templates
+
+Customize the report template in [templates/report.html](templates/report.html)
+
+The current one uses [Bulma CSS](https://bulma.io/).
+
 ## Development
 
 Use Shodan2DB as python class
