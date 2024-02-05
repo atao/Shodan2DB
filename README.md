@@ -1,6 +1,6 @@
 [![Lint Python](https://github.com/atao/Shodan2DB/actions/workflows/main.yml/badge.svg)](https://github.com/atao/Shodan2DB/actions/workflows/main.yml)
 # Shodan2DB
-🔌 Shodan export to SQLite database.
+🔌 Shodan export to SQLite database and generate an HTML report.
 
 ## Purpose
 
@@ -21,16 +21,39 @@ pip install -r requirements.txt
 ## Usage and options
 
 ```
-Usage: shodan2db.py [OPTIONS]
+Usage: shodan2db.py [OPTIONS] COMMAND [ARGS]...
 
 Options:
-  --version              Show the version and exit.
-  -i, --inputfile TEXT   Json export file from Shodan.  [required]
-  -d, --database TEXT    Database name.  [default: shodan.db]
-  -o, --exportfile TEXT  Output report HTML file.  [default: shodan.html]
-  -r, --report-only      Only export report from database.
+  --help  Show this message and exit.
+
+Commands:
+  export  Generate an HTML report from the data in the database.
+  parse   Parse the Shodan JSON export file and store data in the database.
+```
+- *Command parse*
+```
+Usage: shodan2db.py parse [OPTIONS]
+
+  Parse the Shodan JSON export file and store data in the database.
+
+Options:
+  -i, --input-file PATH  JSON export file from Shodan.  [required]
+  -d, --database TEXT    Database name.  [required]
   -v, --verbose          Verbose mode.
   -h, --help             Show this message and exit.
+```
+- *Command export*
+```
+Usage: shodan2db.py export [OPTIONS]
+
+  Generate an HTML report from the data in the database.
+
+Options:
+  -d, --database PATH     Path to the SQLite database file.  [required]
+  -o, --report-file PATH  Output path for the HTML report file.  [default:
+                          shodan.html]
+  -v, --verbose           Verbose mode.
+  -h, --help              Show this message and exit.
 ```
 
 ## Quickstart
@@ -48,7 +71,8 @@ Download your results.
 
 Then import the results into the database using the command :
 ```
-shodan2db.py -i <json_file>
+python .\shodan2db.py parse -i .\example_shodan.json -d .\example_database.db -v
+python .\shodan2db.py export -d .\example_database.db -d .\example_report.html -v
 ```
 
 **Tags** and **vulns** are visible directly in the **Summary** table.

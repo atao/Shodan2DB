@@ -7,16 +7,14 @@ from jinja2 import Environment, FileSystemLoader
 
 
 class Shodan2DB():
-    def __init__(self, verbose, database, inputfile, exportfile, report):
+    # Constructor initializes the database and export file with the appropriate extensions
+    def __init__(self, database, exportfile):
         if not database.endswith(".db"):
-            database = "{}.db".format(database)
+            self.database = "{}.db".format(database)
         if not exportfile.endswith(".html"):
-            exportfile = "{}.html".format(exportfile)
-        if not report:
-            self.prepare_database(verbose, database)
-            self.parser(verbose, inputfile, database)
-        self.export(verbose, exportfile, database)
+            self.exportfile = "{}.html".format(exportfile)
 
+    # Static method to create tables and views in the SQLite database
     @staticmethod
     def prepare_database(verbose, database):
         # Create database
@@ -47,6 +45,7 @@ class Shodan2DB():
         finally:
             conn.close()
 
+    # Static method to parse a JSON file and insert data into the database
     @staticmethod
     def parser(verbose, inputfile, database):
         if verbose:
@@ -146,6 +145,7 @@ class Shodan2DB():
             print('[!] Error: Provided input file does not exist!')
             exit(1)
 
+    # Static method to generate an HTML report from the database data
     @staticmethod
     def export(verbose, exportfile, database):
         try:
@@ -205,19 +205,58 @@ class Shodan2DB():
                 print(f"[+] Wrote report : {filename}")
 
 
-@click.command(context_settings=dict(help_option_names=['-h', '--help']))
-@click.version_option(version='1', prog_name="Shodan2DB")
-@click.option('--inputfile', '-i', help='Json export file from Shodan.', required=True, type=str)
-@click.option('--database', '-d', default='shodan.db', help='Database name.', show_default=True, type=str)
-@click.option('--exportfile', '-o', default='shodan.html', help='Output report HTML file.', show_default=True, type=str)
-@click.option('--report-only', '-r', 'report', is_flag=True, help="Only export report from database.")
+# Define the click group to organize commands
+@click.group()
+def cli():
+    pass
+
+
+# Define the parse command with options for input file, database, and verbose mode
+@click.command(name="parse", help="Parse the Shodan JSON export file and store data in the database.",
+               context_settings=dict(help_option_names=['-h', '--help']))
+@click.option('--input-file', '-i', help='JSON export file from Shodan.', required=True, type=click.Path(exists=True))
+@click.option('--database', '-d', help='Database name.', required=True, show_default=True, type=str)
 @click.option('--verbose', '-v', is_flag=True, help="Verbose mode.")
-def cli(verbose, database, inputfile, exportfile, report):
-    Shodan2DB(verbose, database, inputfile, exportfile, report)
+def parse(verbose, database, input_file):
+    """
+    Parse the Shodan JSON export file and store data in the database.
+    """
+    # Since the required=True attribute is set, Click will automatically enforce that these options are provided
+    Shodan2DB.prepare_database(verbose=verbose, database=database)
+    Shodan2DB.parser(verbose=verbose, database=database, inputfile=input_file)
 
 
+# Define the export command with options for database, report file, and verbose mode
+def validate_database(ctx, param, value):
+    if not value:
+        raise click.MissingParameter(ctx=ctx, param=param, message='Please specify a database using --database.')
+    return value
+
+
+@click.command(name="export", help="Generate an HTML report from the data in the database.",
+               context_settings=dict(help_option_names=['-h', '--help']))
+@click.option('--database', '-d', callback=validate_database, help='Path to the SQLite database file.',
+              type=click.Path(exists=True), required=True)
+@click.option('--report-file', '-o', default='shodan.html', help='Output path for the HTML report file.',
+              show_default=True, type=click.Path(writable=True))
+@click.option('--verbose', '-v', is_flag=True, help="Verbose mode.")
+def export(verbose, database, report_file):
+    """
+    Generate an HTML report from the data in the database.
+    """
+    # With the callback validation, no need for an explicit check here
+    Shodan2DB.export(verbose=verbose, database=database, exportfile=report_file)
+
+
+# Add the parse and export commands to the CLI group
+cli.add_command(parse)
+cli.add_command(export)
+
+# Main execution block
 if __name__ == '__main__':
+    # Show help message if no arguments are provided
     if len(sys.argv) == 1:
         cli.main(['--help'])
     else:
+        # Execute the CLI commands
         cli()
