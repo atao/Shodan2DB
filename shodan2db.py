@@ -158,7 +158,7 @@ class Shodan2DB():
             cursor.execute("""SELECT ip, cveid, cvss, summary FROM vulnerabilities ORDER BY ip, cvss DESC""")
             vulns_list = cursor.fetchall()
             cursor.execute(
-                """SELECT ip, port, product, version, transport FROM services
+                """SELECT DISTINCT ip, port, product, version, transport FROM services
                 WHERE ip IN (SELECT ip FROM summary WHERE nbvulns is not NULL) ORDER BY ip""")
             services_list = cursor.fetchall()
             cursor.execute(
