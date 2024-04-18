@@ -1,7 +1,7 @@
 import json
 import sqlite3
 import sys
-
+import os
 import click
 from jinja2 import Environment, FileSystemLoader
 
@@ -19,10 +19,10 @@ class Shodan2DB():
             conn = sqlite3.connect(database)
             cursor = conn.cursor()
             cursor.execute(
-                """CREATE TABLE IF NOT EXISTS "services" ( "id" INTEGER UNIQUE, "ip" TEXT,  "asn" TEXT,  "hostnames" TEXT,
-                "domains" TEXT, "org" TEXT,  "timestamp" TEXT,  "isp" TEXT,  "os" TEXT,  "product" TEXT,  "version" TEXT,
-                "transport" TEXT,  "port" TEXT, "data" TEXT,  "city" TEXT,  "region_code" TEXT,  "area_code" TEXT,
-                "country_code" TEXT,  "country_name" TEXT,  "nbvulns" INTEGER, "tags" TEXT,
+                """CREATE TABLE IF NOT EXISTS "services" ( "id" INTEGER UNIQUE, "ip" TEXT,  "asn" TEXT,  "hostnames" 
+                TEXT, "domains" TEXT, "org" TEXT,  "timestamp" TEXT,  "isp" TEXT,  "os" TEXT,  "product" TEXT,  
+                "version" TEXT, "transport" TEXT,  "port" TEXT, "data" TEXT,  "city" TEXT,  "region_code" TEXT,  
+                "area_code" TEXT, "country_code" TEXT,  "country_name" TEXT,  "nbvulns" INTEGER, "tags" TEXT, 
                 PRIMARY KEY("id" AUTOINCREMENT) )""")
             cursor.execute(
                 """CREATE TABLE IF NOT EXISTS "vulnerabilities" ( "ip" TEXT, "cveid" TEXT, "verified" NUMERIC,
@@ -89,7 +89,8 @@ class Shodan2DB():
                         conn = sqlite3.connect(database)
                         cursor = conn.cursor()
                         cursor.execute(
-                            'INSERT OR IGNORE INTO services (ip, asn, domains, hostnames, org, timestamp, isp, os, product,'
+                            'INSERT OR IGNORE INTO services (ip, asn, domains, hostnames, org, timestamp, isp, os, '
+                            'product,'
                             'version, transport, port, data, city, region_code, area_code, country_code, country_name,'
                             'nbvulns, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                             (
@@ -163,7 +164,8 @@ class Shodan2DB():
                 WHERE ip IN (SELECT ip FROM summary WHERE nbvulns is not NULL) ORDER BY ip""")
             services_list = cursor.fetchall()
             cursor.execute(
-                """SELECT cveid, count(*) as count, cvss, summary from vulnerabilities GROUP BY cveid ORDER BY count DESC, cvss DESC""")
+                """SELECT cveid, count(*) as count, cvss, summary from vulnerabilities GROUP BY cveid ORDER BY count 
+                DESC, cvss DESC""")
             cves_list = cursor.fetchall()
         except sqlite3.OperationalError:
             print("[!] {} not found! Please provide a valid database name with -d".format(database))
@@ -241,7 +243,7 @@ def validate_database(ctx, param, value):
 @click.option('--report-file', '-o', default='shodan.html', help='Output path for the HTML report file.',
               show_default=True, type=click.Path(writable=True))
 @click.option('--template-file', '-t', default='report.html', help='Template used for the report.',
-              show_default=True, type=click.Path(exists=True))
+              show_default=True)
 @click.option('--verbose', '-v', is_flag=True, help="Verbose mode.")
 def export(verbose, database, report_file, template_file):
     """
@@ -261,5 +263,10 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         cli.main(['--help'])
     else:
-        # Execute the CLI commands
-        cli()
+        if not os.path.exists("templates"):
+            raise SystemExit("Templates folder doesn't exist.", 2)
+        elif not os.path.isfile("templates/report.html"):
+            raise SystemExit("Default report.html doesn't exist.", 2)
+        else:
+            # Execute the CLI commands
+            cli()
