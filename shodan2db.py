@@ -48,8 +48,8 @@ class Shodan2DB():
         if verbose:
             print("[+] Parsing file...")
         try:
-            with open(inputfile) as jsonFile:
-                for line in jsonFile:
+            with open(inputfile, encoding='utf-8') as json_file:
+                for line in json_file:
                     jsonobject = json.loads(line)
 
                     # Mapping data
@@ -65,7 +65,7 @@ class Shodan2DB():
                     org = jsonobject.get('org')
                     timestamp = jsonobject.get('timestamp')
                     isp = jsonobject.get('isp')
-                    os = jsonobject.get('os')
+                    operating_system = jsonobject.get('os')
                     product = jsonobject.get('product')
                     version = jsonobject.get('version')
                     transport = jsonobject.get('transport')
@@ -94,10 +94,8 @@ class Shodan2DB():
                             'version, transport, port, data, city, region_code, area_code, country_code, country_name,'
                             'nbvulns, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                             (
-                                ip_str, asn, domains, hostnames, org, timestamp, isp, os, product, version, transport,
-                                port,
-                                data,
-                                city, region_code, area_code, country_code, country_name, nbvulns, tags,))
+                                ip_str, asn, domains, hostnames, org, timestamp, isp, operating_system, product, version, transport,
+                                port, data, city, region_code, area_code, country_code, country_name, nbvulns, tags,))
                         # id = cursor.lastrowid
                         # print('Last id insert : %d' % id, "-", line)
                         conn.commit()
@@ -139,7 +137,7 @@ class Shodan2DB():
                                 conn.close()
                     else:
                         pass
-        except:
+        except FileNotFoundError:
             print('[!] Error: Provided input file does not exist!')
             exit(1)
 
