@@ -11,7 +11,7 @@ class Shodan2DB():
     @staticmethod
     def prepare_database(verbose, database):
         if not database.endswith(".db"):
-            database = "{}.db".format(database)
+            database = f"{database}.db"
         # Create database
         try:
             if verbose:
@@ -44,7 +44,7 @@ class Shodan2DB():
     @staticmethod
     def parser(verbose, inputfile, database):
         if not database.endswith(".db"):
-            database = "{}.db".format(database)
+            database = f"{database}.db"
         if verbose:
             print("[+] Parsing file...")
         try:
@@ -147,9 +147,9 @@ class Shodan2DB():
     @staticmethod
     def export(verbose, exportfile, database, template_file):
         if not exportfile.endswith(".html"):
-            exportfile = "{}.html".format(exportfile)
+            exportfile = f"{exportfile}.html"
         if not database.endswith(".db"):
-            database = "{}.db".format(database)
+            database = f"{database}.db"
         try:
             conn = sqlite3.connect(database)
             cursor = conn.cursor()
@@ -168,7 +168,7 @@ class Shodan2DB():
                 DESC, cvss DESC""")
             cves_list = cursor.fetchall()
         except sqlite3.OperationalError:
-            print("[!] {} not found! Please provide a valid database name with -d".format(database))
+            print(f"[!] {database} not found! Please provide a valid database name with -d")
             exit(1)
 
         # Transformation of lists into dictionaries for easier template editing.
