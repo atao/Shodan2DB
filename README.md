@@ -1,5 +1,7 @@
 [![Lint Python](https://github.com/atao/Shodan2DB/actions/workflows/main.yml/badge.svg)](https://github.com/atao/Shodan2DB/actions/workflows/main.yml)
+
 # Shodan2DB
+
 🔌 Shodan export to SQLite database and generate an HTML report.
 
 ## Purpose
@@ -14,13 +16,14 @@ Generate a report of found CVEs with HTML template.
 Customize the report in `templates/` folder using jinja2 and Bulma CSS.
 
 ## Requirements
-```
+
+```bash
 pip install -r requirements.txt
 ```
 
 ## Usage and options
 
-```
+```bash
 Usage: shodan2db.py [OPTIONS] COMMAND [ARGS]...
 
 Options:
@@ -30,8 +33,10 @@ Commands:
   export  Generate an HTML report from the data in the database.
   parse   Parse the Shodan JSON export file and store data in the database.
 ```
+
 - *Command parse*
-```
+
+```bash
 Usage: shodan2db.py parse [OPTIONS]
 
   Parse the Shodan JSON export file and store data in the database.
@@ -42,8 +47,10 @@ Options:
   -v, --verbose          Verbose mode.
   -h, --help             Show this message and exit.
 ```
+
 - *Command export*
-```
+
+```bash
 Usage: shodan2db.py export [OPTIONS]
 
   Generate an HTML report from the data in the database.
@@ -59,6 +66,7 @@ Options:
 ```
 
 ## Quickstart
+
 Do a search and click on "**Download Results**".
 
 <img src="img/Shodan Export.png">
@@ -72,7 +80,8 @@ Download your results.
 <img src="img/Shodan Download.png">
 
 Then import the results into the database using the command :
-```
+
+```bash
 python .\shodan2db.py parse -i .\example_shodan.json -d .\example_database.db -v
 python .\shodan2db.py export -d .\example_database.db -d .\example_report.html -v
 ```
