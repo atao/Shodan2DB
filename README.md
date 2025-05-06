@@ -83,7 +83,7 @@ Then import the results into the database using the command :
 
 ```bash
 python .\shodan2db.py parse -i .\example_shodan.json -d .\example_database.db -v
-python .\shodan2db.py export -d .\example_database.db -d .\example_report.html -v
+python .\shodan2db.py export -d .\example_database.db -o .\example_report.html -v
 ```
 
 **Tags** and **vulns** are visible directly in the **Summary** table.
