@@ -1,5 +1,3 @@
-[![Lint Python](https://github.com/atao/Shodan2DB/actions/workflows/main.yml/badge.svg)](https://github.com/atao/Shodan2DB/actions/workflows/main.yml)
-
 # Shodan2DB
 
 🔌 Shodan export to SQLite database and generate an HTML report.
