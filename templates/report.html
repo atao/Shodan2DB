@@ -320,10 +320,11 @@
     </div> <!-- Close Main Container (from Piece 1) -->
 
     <!-- Interactive Client-Side Features -->
+    <!-- Interactive Client-Side Features -->
     <script>
         /**
          * Real-time search engine for the report.
-         * Filters the host sections based on user search string inputs.
+         * Filters the host sections and shifts focus dynamically.
          */
         function liveSearch() {
             const sections = document.querySelectorAll('.section');
@@ -331,14 +332,24 @@
             if (!searchInput) return;
             
             const searchQuery = searchInput.value.toLowerCase().trim();
+            let firstVisibleCard = null;
 
             sections.forEach(section => {
                 if (searchQuery === "" || section.innerText.toLowerCase().includes(searchQuery)) {
                     section.classList.remove("is-hidden");
+                    // Identify the first matching host to focus on
+                    if (!firstVisibleCard) {
+                        firstVisibleCard = section;
+                    }
                 } else {
                     section.classList.add("is-hidden");
                 }
             });
+
+            // Smoothly refocus view on the first available record during active search
+            if (searchQuery !== "" && firstVisibleCard) {
+                firstVisibleCard.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+            }
         }
 
         /**
