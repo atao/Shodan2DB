@@ -188,9 +188,9 @@
             <section class="section box my-5 py-5 border-vulnerability">
                 <div id="{{ host.ip }}" class="host-banner mb-4">
                     <p>
-                        <a href="https://shodan.io{{ host.ip }}" target="_blank" rel="noopener" class="title is-4 has-text-white underline">
+                        <a href="https://www.shodan.io/host/{{ host.ip }}" target="_blank" rel="noopener" class="title is-4 has-text-white underline">
                             <i class="bi bi-hdd-network-fill mr-2"></i>{{ host.ip }}
-                        </a> 
+                        </a>
                         <span class="tag is-danger is-light is-rounded is-medium float-right has-text-weight-bold">
                             {{ host.nbvulns or 0 }} Vulns
                         </span>
