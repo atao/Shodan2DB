@@ -284,7 +284,7 @@ class Shodan2DB:
 
         except sqlite3.OperationalError as e:
             print(f"[!] Database error: {e}", file=sys.stderr)
-            print(f"[!] Please provide a valid database name.", file=sys.stderr)
+            print("[!] Please provide a valid database name.", file=sys.stderr)
             sys.exit(1)
 
         if verbose:
