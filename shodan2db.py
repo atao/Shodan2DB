@@ -10,200 +10,274 @@ class Shodan2DB():
     # Static method to create tables and views in the SQLite database
     @staticmethod
     def prepare_database(verbose, database):
+        # Ensure the database file has the correct extension
         if not database.endswith(".db"):
             database = f"{database}.db"
-        # Create database
+            
+        if verbose:
+            print("[+] Initializing database schema and performance tweaks...")
+            
         try:
-            if verbose:
-                print("[+] Create views and tables...")
-            conn = sqlite3.connect(database)
-            cursor = conn.cursor()
-            cursor.execute(
-                """CREATE TABLE IF NOT EXISTS "services" ( "id" INTEGER UNIQUE, "ip" TEXT,  "asn" TEXT,  "hostnames" 
-                TEXT, "domains" TEXT, "org" TEXT,  "timestamp" TEXT,  "isp" TEXT,  "os" TEXT,  "product" TEXT,  
-                "version" TEXT, "transport" TEXT,  "port" TEXT, "data" TEXT,  "city" TEXT,  "region_code" TEXT,  
-                "area_code" TEXT, "country_code" TEXT,  "country_name" TEXT,  "nbvulns" INTEGER, "tags" TEXT, 
-                PRIMARY KEY("id" AUTOINCREMENT) )""")
-            cursor.execute(
-                """CREATE TABLE IF NOT EXISTS "vulnerabilities" ( "ip" TEXT, "cveid" TEXT, "verified" NUMERIC,
-                "cvss" REAL, "summary" TEXT)""")
-            cursor.execute(
-                """CREATE VIEW IF NOT EXISTS "Summary" AS select ip, hostnames, port, product, version, transport, isp,
-                city, tags, nbvulns FROM services ORDER BY nbvulns DESC""")
-            cursor.execute("""CREATE INDEX IF NOT EXISTS "ip_index" ON services("ip");""")
-            cursor.execute("""CREATE INDEX IF NOT EXISTS "nbvulns_index" ON services("nbvulns");""")
-            conn.commit()
-        except Exception as e:
-            print("Error")
-            conn.rollback()
+            # Use context manager for automatic connection handling, commit, and rollback
+            with sqlite3.connect(database) as conn:
+                cursor = conn.cursor()
+                
+                # PERFORMANCE TWEAKS: Enable WAL mode and normal synchronous writing
+                # Crucial for bulk inserts (Shodan data) to prevent SD card/disk I/O bottlenecks
+                cursor.execute("PRAGMA journal_mode = WAL;")
+                cursor.execute("PRAGMA synchronous = NORMAL;")
+                
+                # Create 'services' table with standard auto-incrementing primary key syntax
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS services (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                        ip TEXT,  
+                        asn TEXT,  
+                        hostnames TEXT, 
+                        domains TEXT, 
+                        org TEXT,  
+                        timestamp TEXT,  
+                        isp TEXT,  
+                        os TEXT,  
+                        product TEXT,  
+                        version TEXT, 
+                        transport TEXT,  
+                        port TEXT, 
+                        data TEXT,  
+                        city TEXT,  
+                        region_code TEXT,  
+                        area_code TEXT, 
+                        country_code TEXT,  
+                        country_name TEXT,  
+                        nbvulns INTEGER, 
+                        tags TEXT
+                    )
+                """)
+                
+                # Create 'vulnerabilities' table with a composite unique constraint
+                # Prevents duplicate CVE tracking per IP when parsing overlapping Shodan files
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS vulnerabilities (
+                        ip TEXT, 
+                        cveid TEXT, 
+                        verified NUMERIC,
+                        cvss REAL, 
+                        summary TEXT,
+                        UNIQUE(ip, cveid) ON CONFLICT IGNORE
+                    )
+                """)
+                
+                # Create 'Summary' view for quick analytics sorted by vulnerability count
+                cursor.execute("""
+                    CREATE VIEW IF NOT EXISTS Summary AS 
+                    SELECT ip, hostnames, port, product, version, transport, isp, city, tags, nbvulns 
+                    FROM services 
+                    ORDER BY nbvulns DESC
+                """)
+                
+                # CREATE INDEXES: Dramatically speeds up search queries and HTML report generation
+                cursor.execute("CREATE INDEX IF NOT EXISTS ip_index ON services(ip);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS nbvulns_index ON services(nbvulns);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS vulns_ip_index ON vulnerabilities(ip);")
+                
+                # Transaction is automatically committed upon exiting the 'with' block if no errors occur
+                
+        except sqlite3.Error as e:
+            print(f"[-] Critical SQLite error during database preparation: {e}", file=sys.stderr)
             raise e
-        finally:
-            conn.close()
+
 
     # Static method to parse a JSON file and insert data into the database
     @staticmethod
     def parser(verbose, inputfile, database):
+        # Ensure the database file has the correct extension
         if not database.endswith(".db"):
             database = f"{database}.db"
         if verbose:
-            print("[+] Parsing file...")
+            print("[+] Parsing file and bulk inserting data...")
+
         try:
-            with open(inputfile, encoding='utf-8') as json_file:
-                for line in json_file:
-                    jsonobject = json.loads(line)
+            # Open a single database connection for the entire file processing
+            with sqlite3.connect(database) as conn:
+                # PERFORMANCE TWEAKS: Enable WAL mode and reduce sync frequency
+                # Crucial to speed up bulk inserts and extend SD card/disk lifespan
+                conn.execute("PRAGMA journal_mode = WAL;")
+                conn.execute("PRAGMA synchronous = NORMAL;")
+                cursor = conn.cursor()
 
-                    # Mapping data
-                    ip_str = jsonobject.get('ip_str')
-                    asn = jsonobject.get('asn')
-                    if jsonobject.get('domains') is not None:
-                        domains = jsonobject.get('domains')
-                        domains = " ".join(domains)
-                    else:
-                        domains = None
-                    hostnames = jsonobject.get('hostnames')
-                    hostnames = " ".join(hostnames)
-                    org = jsonobject.get('org')
-                    timestamp = jsonobject.get('timestamp')
-                    isp = jsonobject.get('isp')
-                    operating_system = jsonobject.get('os')
-                    product = jsonobject.get('product')
-                    version = jsonobject.get('version')
-                    transport = jsonobject.get('transport')
-                    port = jsonobject.get('port')
-                    data = jsonobject.get('data')
-                    city = jsonobject['location']['city']
-                    region_code = jsonobject['location']['region_code']
-                    area_code = jsonobject['location']['area_code']
-                    country_code = jsonobject['location']['country_code']
-                    country_name = jsonobject['location']['country_name']
-                    if jsonobject.get('vulns') is not None:
-                        nbvulns = len(jsonobject.get('vulns'))
-                    else:
-                        nbvulns = None
-                    tags = jsonobject.get('tags')
-                    if tags is not None:
-                        tags = " ".join(tags)
+                # Process the input file line by line to minimize memory usage
+                with open(inputfile, encoding='utf-8') as json_file:
+                    for line_idx, line in enumerate(json_file, 1):
+                        # Skip empty lines
+                        if not line.strip():
+                            continue
+                        
+                        # Validate and parse the JSON line structure
+                        try:
+                            jsonobject = json.loads(line)
+                        except json.JSONDecodeError:
+                            print(f"[!] Skip line {line_idx}: Invalid JSON structure.")
+                            continue
 
-                    # Insertion services
-                    try:
-                        conn = sqlite3.connect(database)
-                        cursor = conn.cursor()
-                        cursor.execute(
-                            'INSERT OR IGNORE INTO services (ip, asn, domains, hostnames, org, timestamp, isp, os, '
-                            'product,'
-                            'version, transport, port, data, city, region_code, area_code, country_code, country_name,'
-                            'nbvulns, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                            (
-                                ip_str, asn, domains, hostnames, org, timestamp, isp, operating_system, product, version, transport,
-                                port, data, city, region_code, area_code, country_code, country_name, nbvulns, tags,))
-                        # id = cursor.lastrowid
-                        # print('Last id insert : %d' % id, "-", line)
-                        conn.commit()
-                    except sqlite3.IntegrityError:
-                        print("[!] Already exist :", line)
-                        continue
-                    except Exception as e:
-                        print("[!] Error")
-                        conn.rollback()
-                        raise e
-                    finally:
-                        conn.close()
-                    if nbvulns is not None:
-                        for i in jsonobject['vulns']:
-                            cveid = i
-                            verified = jsonobject['vulns'][i]['verified']
-                            cvss = jsonobject['vulns'][i]['cvss']
-                            summary = jsonobject['vulns'][i]['summary']
+                        # Extract core identification and network data
+                        ip_str = jsonobject.get('ip_str')
+                        asn = jsonobject.get('asn')
+                        
+                        # Flatten lists into space-separated strings for SQLite storage
+                        domains = " ".join(jsonobject.get('domains')) if jsonobject.get('domains') else None
+                        hostnames = " ".join(jsonobject.get('hostnames')) if jsonobject.get('hostnames') else None
+                        tags = " ".join(jsonobject.get('tags')) if jsonobject.get('tags') else None
+                        
+                        # Extract service and software specific fields
+                        org = jsonobject.get('org')
+                        timestamp = jsonobject.get('timestamp')
+                        isp = jsonobject.get('isp')
+                        operating_system = jsonobject.get('os')
+                        product = jsonobject.get('product')
+                        version = jsonobject.get('version')
+                        transport = jsonobject.get('transport')
+                        port = jsonobject.get('port')
+                        data = jsonobject.get('data')
 
-                            # Insertion vulnerabilities
-                            try:
-                                conn = sqlite3.connect(database)
-                                cursor = conn.cursor()
-                                cursor.execute(
-                                    'INSERT OR IGNORE INTO vulnerabilities (ip, cveid, verified, cvss, summary)'
-                                    'VALUES (?, ?, ?, ?, ?)',
-                                    (ip_str, cveid, verified, cvss, summary,))
-                                # id = cursor.lastrowid
-                                # print('Last id insert : %d' % id, "-", line)
-                                conn.commit()
-                            except sqlite3.IntegrityError:
-                                print("[!] Already exist :", line)
-                                continue
-                            except Exception as e:
-                                print("[!] Error")
-                                conn.rollback()
-                                raise e
-                            finally:
-                                conn.close()
-                    else:
-                        pass
+                        # Safe extraction of nested location attributes to avoid KeyError
+                        location = jsonobject.get('location', {})
+                        city = location.get('city')
+                        region_code = location.get('region_code')
+                        area_code = location.get('area_code')
+                        country_code = location.get('country_code')
+                        country_name = location.get('country_name')
+
+                        # Evaluate vulnerability data presence
+                        vulns = jsonobject.get('vulns')
+                        nbvulns = len(vulns) if vulns is not None else None
+
+                        # Execute service records batch insertion
+                        try:
+                            cursor.execute(
+                                'INSERT OR IGNORE INTO services (ip, asn, domains, hostnames, org, timestamp, isp, os, '
+                                'product, version, transport, port, data, city, region_code, area_code, country_code, '
+                                'country_name, nbvulns, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                                (ip_str, asn, domains, hostnames, org, timestamp, isp, operating_system, product, version, 
+                                 transport, port, data, city, region_code, area_code, country_code, country_name, nbvulns, tags)
+                            )
+                        except sqlite3.Error as e:
+                            print(f"[!] Database error on service line {line_idx}: {e}")
+                            continue
+
+                        # Execute associated vulnerability records insertion if sub-items exist
+                        if vulns:
+                            for cveid, vuln_data in vulns.items():
+                                verified = vuln_data.get('verified')
+                                cvss = vuln_data.get('cvss')
+                                summary = vuln_data.get('summary')
+
+                                try:
+                                    cursor.execute(
+                                        'INSERT OR IGNORE INTO vulnerabilities (ip, cveid, verified, cvss, summary) '
+                                        'VALUES (?, ?, ?, ?, ?)',
+                                        (ip_str, cveid, verified, cvss, summary)
+                                    )
+                                except sqlite3.Error as e:
+                                    print(f"[!] Database error on vuln {cveid} (line {line_idx}): {e}")
+                                    continue
+                
+                # Single atomical batch commit after parsing all rows successfully
+                conn.commit()
+
         except FileNotFoundError:
-            print('[!] Error: Provided input file does not exist!')
-            exit(1)
+            print(f'[!] Error: Provided input file "{inputfile}" does not exist!', file=sys.stderr)
+            sys.exit(1)
+        except sqlite3.Error as e:
+            print(f"[-] Critical database connection error: {e}", file=sys.stderr)
+            sys.exit(1)
+
+
 
     # Static method to generate an HTML report from the database data
     @staticmethod
     def export(verbose, exportfile, database, template_file):
+        # Ensure the export report file has the correct HTML extension
         if not exportfile.endswith(".html"):
             exportfile = f"{exportfile}.html"
+        # Ensure the database file has the correct extension
         if not database.endswith(".db"):
             database = f"{database}.db"
+            
+        if verbose:
+            print(f"[+] Fetching data from {database}...")
+
         try:
-            conn = sqlite3.connect(database)
-            cursor = conn.cursor()
-            cursor.execute(
-                """SELECT DISTINCT ip, hostnames, isp, city, tags, nbvulns FROM summary
-                WHERE nbvulns IS NOT NULL ORDER BY nbvulns DESC""")
-            hosts_list = cursor.fetchall()
-            cursor.execute("""SELECT ip, cveid, cvss, summary FROM vulnerabilities ORDER BY ip, cvss DESC""")
-            vulns_list = cursor.fetchall()
-            cursor.execute(
-                """SELECT DISTINCT ip, port, product, version, transport FROM services
-                WHERE ip IN (SELECT ip FROM summary WHERE nbvulns is not NULL) ORDER BY ip""")
-            services_list = cursor.fetchall()
-            cursor.execute(
-                """SELECT cveid, count(*) as count, cvss, summary from vulnerabilities GROUP BY cveid ORDER BY count 
-                DESC, cvss DESC""")
-            cves_list = cursor.fetchall()
-        except sqlite3.OperationalError:
-            print(f"[!] {database} not found! Please provide a valid database name with -d")
-            exit(1)
+            # Open database connection using context manager for safe cleanup
+            with sqlite3.connect(database) as conn:
+                # Map column names to object keys allowing Jinja2 syntax like {{ host.ip }}
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                
+                # Fetch distinct vulnerable hosts sorted by total vulnerability count
+                cursor.execute("""
+                    SELECT DISTINCT ip, hostnames, isp, city, tags, nbvulns FROM summary
+                    WHERE nbvulns IS NOT NULL ORDER BY nbvulns DESC
+                """)
+                hosts_list = cursor.fetchall()
+                
+                # Fetch individual vulnerabilities ordered by IP and severity level
+                cursor.execute("""
+                    SELECT ip, cveid, cvss, summary FROM vulnerabilities 
+                    ORDER BY ip, cvss DESC
+                """)
+                vulns_list = cursor.fetchall()
+                
+                # Fetch target services bound to vulnerable network hosts
+                cursor.execute("""
+                    SELECT DISTINCT ip, port, product, version, transport FROM services
+                    WHERE ip IN (SELECT ip FROM summary WHERE nbvulns IS NOT NULL) ORDER BY ip
+                """)
+                services_list = cursor.fetchall()
+                
+                # Fetch consolidated statistics for recurring CVEs across infrastructure
+                cursor.execute("""
+                    SELECT cveid, count(*) as count, cvss, summary FROM vulnerabilities 
+                    GROUP BY cveid ORDER BY count DESC, cvss DESC
+                """)
+                cves_list = cursor.fetchall()
+                
+        except sqlite3.OperationalError as e:
+            print(f"[!] Database error: {e}", file=sys.stderr)
+            print(f"[!] Please provide a valid database name.", file=sys.stderr)
+            sys.exit(1)
 
-        # Transformation of lists into dictionaries for easier template editing.
-        hosts_data = []
-        for row in hosts_list:
-            hosts = {"ip": row[0], "hostnames": row[1], "isp": row[2], "city": row[3], "tags": row[4],
-                     "nbvulns": row[5]}
-            hosts_data.append(hosts)
+        if verbose:
+            print("[+] Rendering template and generating HTML report...")
 
-        services_data = []
-        for row in services_list:
-            services = {"ip": row[0], "port": row[1], "product": row[2], "version": row[3], "transport": row[4]}
-            services_data.append(services)
+        # Dynamically separate directories to support flexible template locations
+        template_dir = os.path.dirname(template_file) or "templates"
+        template_name = os.path.basename(template_file)
 
-        vulns_data = []
-        for row in vulns_list:
-            vulns = {"ip": row[0], "cveid": row[1], "cvss": row[2], "summary": row[3]}
-            vulns_data.append(vulns)
-
-        cves_data = []
-        for row in cves_list:
-            cves = {"cveid": row[0], "count": row[1], "cvss": row[2], "summary": row[3]}
-            cves_data.append(cves)
-
-        environment = Environment(loader=FileSystemLoader("templates/"))
-        template = environment.get_template(template_file)
-        filename = exportfile
-        content = template.render(
-            hosts=hosts_data,
-            services=services_data,
-            vulns=vulns_data,
-            cves=cves_data
-        )
-        with open(filename, mode="w", encoding="utf-8") as message:
-            message.write(content)
+        try:
+            # Initialize Jinja2 environment with targeted storage directories
+            environment = Environment(loader=FileSystemLoader(template_dir))
+            template = environment.get_template(template_name)
+            
+            # Map dataset lists directly onto targeted template fields
+            content = template.render(
+                hosts=hosts_list,
+                services=services_list,
+                vulns=vulns_list,
+                cves=cves_list
+            )
+            
+            # Write compiled content structure safely into output document
+            with open(exportfile, mode="w", encoding="utf-8") as message:
+                message.write(content)
+                
             if verbose:
-                print(f"[+] Wrote report : {filename}")
+                print(f"[+] Wrote report : {exportfile}")
+                
+        except Exception as e:
+            print(f"[!] Error during template rendering or file writing: {e}", file=sys.stderr)
+            sys.exit(1)
+
+
 
 
 # Define the click group to organize commands
@@ -216,38 +290,29 @@ def cli():
 @click.command(name="parse", help="Parse the Shodan JSON export file and store data in the database.",
                context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('--input-file', '-i', help='JSON export file from Shodan.', required=True, type=click.Path(exists=True))
-@click.option('--database', '-d', help='Database name.', required=True, show_default=True, type=str)
+@click.option('--database', '-d', help='Database name or path.', required=True, type=str)
 @click.option('--verbose', '-v', is_flag=True, help="Verbose mode.")
 def parse(verbose, database, input_file):
     """
     Parse the Shodan JSON export file and store data in the database.
     """
-    # Since the required=True attribute is set, Click will automatically enforce that these options are provided
     Shodan2DB.prepare_database(verbose=verbose, database=database)
     Shodan2DB.parser(verbose=verbose, database=database, inputfile=input_file)
 
 
 # Define the export command with options for database, report file, and verbose mode
-def validate_database(ctx, param, value):
-    if not value:
-        raise click.MissingParameter(ctx=ctx, param=param, message='Please specify a database using --database.')
-    return value
-
-
 @click.command(name="export", help="Generate an HTML report from the data in the database.",
                context_settings=dict(help_option_names=['-h', '--help']))
-@click.option('--database', '-d', callback=validate_database, help='Path to the SQLite database file.',
-              type=click.Path(exists=True), required=True)
+@click.option('--database', '-d', help='Path to the SQLite database file.', required=True, type=click.Path(exists=True))
 @click.option('--report-file', '-o', default='shodan.html', help='Output path for the HTML report file.',
               show_default=True, type=click.Path(writable=True))
-@click.option('--template-file', '-t', default='report.html', help='Template used for the report.',
-              show_default=True)
+@click.option('--template-file', '-t', default='templates/report.html', help='Path to the Jinja2 template file.',
+              show_default=True, type=click.Path(exists=True))
 @click.option('--verbose', '-v', is_flag=True, help="Verbose mode.")
 def export(verbose, database, report_file, template_file):
     """
     Generate an HTML report from the data in the database.
     """
-    # With the callback validation, no need for an explicit check here
     Shodan2DB.export(verbose=verbose, database=database, exportfile=report_file, template_file=template_file)
 
 
@@ -261,10 +326,12 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         cli.main(['--help'])
     else:
-        if not os.path.exists("templates"):
-            raise SystemExit("Templates folder doesn't exist.", 2)
-        elif not os.path.isfile("templates/report.html"):
-            raise SystemExit("Default report.html doesn't exist.", 2)
-        else:
-            # Execute the CLI commands
-            cli()
+        # Check template existence globally only if invoking the export command implicitly
+        if "export" in sys.argv and not any(arg in sys.argv for arg in ["-t", "--template-file"]):
+            if not os.path.exists("templates") or not os.path.isfile("templates/report.html"):
+                print("[!] Error: Default 'templates/report.html' not found. "
+                      "Please create it or use -t to specify a template.", file=sys.stderr)
+                sys.exit(2)
+                
+        # Execute the CLI application
+        cli()

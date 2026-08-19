@@ -1,262 +1,363 @@
 {# templates/report.html #}
 <!doctype html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Shodan2DB</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
-    <!-- Bootstrap icon -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.2/font/bootstrap-icons.css">
-    <!-- sortable -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/js/sortable.min.js" integrity="sha512-DEcSaL0BWApJ//v7ZfqAI04nvK+NQcUVwrrx/l1x7OJgU0Cwbq7e459NBMzLPrm8eLPzAwBtiJJS4AvLZDZ8xA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <title>Shodan2DB - Surface Exposure Report</title>
+    
+    <!-- Official Latest Bulma CSS Core Framework -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+    
+    <!-- Standard Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    
+    <!-- Custom Layout Adjustments -->
+    <style>
+        body {
+            background-color: #f0f4f8 !important;
+            min-height: 100vh;
+        }
+        .navbar.shadow {
+            box-shadow: 0 4px 12px rgba(10, 10, 10, 0.05) !important;
+        }
+        .box {
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05) !important;
+            border-radius: 8px !important;
+            border: 1px solid #e1e8ed !important;
+        }
+        /* Style des fiches d'hôtes - Correction de la visibilité de l'ISP */
+        .host-banner {
+            background-color: #1a2530 !important;
+            color: #ffffff !important;
+            border-radius: 6px;
+            padding: 1.5rem;
+        }
+        .host-banner strong, .host-banner b {
+            color: #38ef7d !important; /* Vert néon pour l'ISP et la Ville */
+        }
+        .host-banner .title {
+            color: #ffffff !important;
+        }
+        .host-banner .subtitle {
+            color: #b0bec5 !important;
+        }
+        .border-vulnerability {
+            border-left: 6px solid #e74c3c !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .border-vulnerability:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08) !important;
+        }
+        .float-right {
+            float: right !important;
+        }
+        .underline {
+            text-decoration: underline;
+        }
+        .table-container {
+            margin-bottom: 1.5rem;
+        }
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 5rem;
+        }
+        .is-size-7 {
+            font-size: 0.85rem !important;
+            line-height: 1.4;
+        }
+        .table thead th {
+            background-color: #f8fafc !important;
+            color: #334155 !important;
+            font-weight: 600 !important;
+        }
+    </style>
 </head>
 <body class="has-navbar-fixed-top">
-<div class="container is-fluid">
-    <div class="has-text-centered is-size-1">
-        Surface exposure report
-    </div>
-    <br>
-    <nav class="navbar is-fixed-top">
+    <!-- Top Fixed Navigation Bar -->
+    <nav class="navbar is-fixed-top is-light shadow">
         <div class="container">
-          <div class="navbar-brand">
-            <a class="navbar-item has-text-weight-semibold" href="#top" title="top">
-                Shodan2DB
-            </a>
-            <div class="navbar-burger burger" data-target="navMenu">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-          </div>
-          <div id="navMenu" class="navbar-menu">
-            <div class="navbar-start">
-                <a class="navbar-item" href="#hosts-list">
-                    Hosts
+            <div class="navbar-brand">
+                <a class="navbar-item has-text-weight-semibold" href="#top">
+                    Shodan2DB
                 </a>
-                <a class="navbar-item" href="#vulns-list">
-                    Vulnerabilities
-                </a>
-                <a class="navbar-item" href="#cve-list">
-                    CVE
-                </a>
-            </div>
-            <div class="navbar-end">
-                <div class="navbar-item">
-                    <p class="control has-icons-left">
-                        <input autofocus
-                               class="input is-rounded" type="text" placeholder="Filter"
-                               id="searchbox"
-                               oninput="liveSearch()"
-                               placeholder="Filter"
-                               type="search">
-                        <span class="icon is-medium is-left">
-                            <i class="bi bi-search"></i>
-                        </span>
-                    </p>
+                <div class="navbar-burger burger" data-target="navMenu" onclick="document.getElementById('navMenu').classList.toggle('is-active');">
+                    <span></span>
+                    <span></span>
+                    <span></span>
                 </div>
             </div>
-          </div>
-        </div>
-      </nav>
-    <nav class="level">
-        <div class="level-item has-text-centered">
-            <div>
-                <p class="heading">Hosts</p>
-                <p class="title">{{ hosts |length }}</p>
-            </div>
-        </div>
-        <div class="level-item has-text-centered">
-            <div>
-                <p class="heading">Vulnerabilities</p>
-                <p class="title">{{ vulns |length }}</p>
-            </div>
-        </div>
-        <div class="level-item has-text-centered">
-            <div>
-                <p class="heading">Products</p>
-                <p class="title">{{ services |length }}</p>
-            </div>
-        </div>
-        <div class="level-item has-text-centered">
-            <div>
-                <p class="heading">CVE</p>
-                <p class="title">{{ cves |length }}</p>
+            <div id="navMenu" class="navbar-menu">
+                <div class="navbar-start">
+                    <a class="navbar-item" href="#hosts-list">Hosts</a>
+                    <a class="navbar-item" href="#vulns-list">Vulnerabilities</a>
+                    <a class="navbar-item" href="#cve-list">CVE</a>
+                </div>
+                <div class="navbar-end">
+                    <div class="navbar-item">
+                        <p class="control has-icons-left">
+                            <input class="input is-rounded" type="search" placeholder="Filter IP Address..." id="searchbox" oninput="liveSearch()" autofocus>
+                            <span class="icon is-medium is-left">
+                                <i class="bi bi-search"></i>
+                            </span>
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
 
-    <p id="hosts-list" class="title is-3 is-spaced">Hosts</p>
-    <table data-sortable class="table is-hoverable is-bordered is-striped">
-        <thead>
-        <tr>
-            <th>IP</th>
-            <th>Hostnames</th>
-            <th>ISP</th>
-            <th>City</th>
-            <th>Tags</th>
-            <th>Vulns</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for host in hosts %}
-            <tr>
-                <td><a href="#{{ host.ip }}">{{ host.ip }}</a></td>
-                <td>{{ host.hostnames }}</td>
-                <td>{{ host.isp }}</td>
-                <td>{{ host.city }}</td>
-                <td>{{ host.tags }}</td>
-                <td>{{ host.nbvulns }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <!-- Main Container Target Layout -->
+    <div class="container is-fluid px-5 mt-5">
+        <div class="has-text-centered title is-1 py-4">
+            Surface Exposure Report
+        </div>
+        <br>
+                <!-- KPI Metrics Dashboards -->
+        <nav class="level box py-4">
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="heading">Hosts</p>
+                    <p class="title has-text-info">{{ hosts | length }}</p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="heading">Vulnerabilities</p>
+                    <p class="title has-text-danger">{{ vulns | length }}</p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="heading">Products</p>
+                    <p class="title has-text-warning">{{ services | length }}</p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="heading">Unique CVEs</p>
+                    <p class="title has-text-primary">{{ cves | length }}</p>
+                </div>
+            </div>
+        </nav>
 
-    <p id="vulns-list" class="title is-3 is-spaced">Vulnerabilities</p>
-    {% for host in hosts %}
-        <section class="section">
-            <div id="{{ host.ip }}" class="tile is-parent">
-                <article class="tile is-child notification is-primary">
-                    <p><a href="https://www.shodan.io/host/{{ host.ip }}" class="title">{{ host.ip }}</a> <span
-                            class="tag is-rounded is-large">{{ host.nbvulns }}</span></p>
-                    <p class="subtitle">{{ host.hostnames }}</p>
-                    <div class="content">
-                        <p>
-                            <b>ISP</b> : {{ host.isp }}
-                            <br><b>City</b> : {{ host.city }}
+        <!-- Global Hosts Summary Table -->
+        <p id="hosts-list" class="title is-3 is-spaced">Hosts</p>
+        <div class="table-container box">
+            <table class="table is-hoverable is-bordered is-striped is-fullwidth">
+                <thead>
+                    <tr class="is-selected">
+                        <th>IP Address</th>
+                        <th>Hostnames</th>
+                        <th>ISP Provider</th>
+                        <th>City Location</th>
+                        <th>Tags</th>
+                        <th>Vulns Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for host in hosts %}
+                    <tr>
+                        <td><a class="has-text-link has-text-weight-bold" href="#{{ host.ip }}">{{ host.ip }}</a></td>
+                        <td>{{ host.hostnames or 'N/A' }}</td>
+                        <td>{{ host.isp or 'N/A' }}</td>
+                        <td>{{ host.city or 'N/A' }}</td>
+                        <td>
                             {% if host.tags %}
-                                <br><b>Tags</b> : {{ host.tags }}
+                                <span class="tag is-info is-light">{{ host.tags }}</span>
+                            {% else %}
+                                <span class="has-text-grey-light">None</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="tag {{ 'is-danger' if host.nbvulns and host.nbvulns > 0 else 'is-success' }} has-text-weight-bold">
+                                {{ host.nbvulns or 0 }}
+                            </span>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Vulnerabilities Host-by-Host Breakdown Details -->
+        <p id="vulns-list" class="title is-3 is-spaced mt-6">Detailed Host Insecurity Profiles</p>
+        <!-- Loop over each host to display sub-tables -->
+        {% for host in hosts %}
+            <section class="section box my-5 py-5 border-vulnerability">
+                <div id="{{ host.ip }}" class="host-banner mb-4">
+                    <p>
+                        <a href="https://shodan.io{{ host.ip }}" target="_blank" rel="noopener" class="title is-4 has-text-white underline">
+                            <i class="bi bi-hdd-network-fill mr-2"></i>{{ host.ip }}
+                        </a> 
+                        <span class="tag is-danger is-light is-rounded is-medium float-right has-text-weight-bold">
+                            {{ host.nbvulns or 0 }} Vulns
+                        </span>
+                    </p>
+                    <p class="subtitle is-6 mt-1">{{ host.hostnames or 'No associated hostname' }}</p>
+                    <div class="content pt-2" style="color: #ffffff !important;">
+                        <p>
+                            <strong>ISP :</strong> {{ host.isp or 'Unknown ISP' }} 
+                            <span class="mx-3">|</span> 
+                            <strong>City :</strong> {{ host.city or 'Unknown City' }}
+                            {% if host.tags %}
+                                <span class="mx-3">|</span> <strong>Tags :</strong> <span class="tag is-small is-warning has-text-dark">{{ host.tags }}</span>
                             {% endif %}
                         </p>
                     </div>
-                </article>
-            </div>
-            <br>
-            <table data-sortable class="table is-hoverable is-bordered is-striped">
-                <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Version</th>
-                    <th>Port</th>
-                    <th>Transport</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for service in services %}
-                    {% if service.ip == host.ip %}
-                        <tr>
-                            <td>{{ service.product }}</td>
-                            <td>{{ service.version }}</td>
-                            <td>
-                                <a href="https://www.shodan.io/host/{{ host.ip }}#{{ service.port }}">{{ service.port }}</a>
-                            </td>
-                            <td>{{ service.transport }}</td>
-                        </tr>
-                    {% endif %}
-                {% endfor %}
-                </tbody>
-            </table>
-            <table data-sortable class="table is-hoverable is-bordered">
-                <thead>
-                <tr>
-                    <th>CVE</th>
-                    <th>CVSS</th>
-                    <th>Description</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for vuln in vulns %}
-                    {% if vuln.ip == host.ip %}
-                        <tr>
-                            <td><a href="https://nvd.nist.gov/vuln/detail/{{ vuln.cveid }}">{{ vuln.cveid }}</a></td>
-                            <td>{{ vuln.cvss }}</td>
-                            <td>{{ vuln.summary }}</td>
-                        </tr>
-                    {% endif %}
-                {% endfor %}
-                </tbody>
-            </table>
-        </section>
-    {% endfor %}
+                </div>
 
+                <!-- Exposed Ports & Banners Section -->
+                <p class="subtitle is-5 mt-5"><i class="bi bi-cpu mr-2"></i>Exposed Open Ports & Services</p>
+                <div class="table-container">
+                    <table class="table is-hoverable is-bordered is-striped is-fullwidth">
+                        <thead>
+                            <tr>
+                                <th>Product banner</th>
+                                <th>Version</th>
+                                <th>Port ID</th>
+                                <th>Transport Layer</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% set ns_services = namespace(has_services=false) %}
+                        {% for service in services %}
+                            {% if service.ip == host.ip %}
+                                {% set ns_services.has_services = true %}
+                                <tr>
+                                    <td><strong>{{ service.product or 'Generic Port Probe' }}</strong></td>
+                                    <td>{{ service.version or 'Undetermined' }}</td>
+                                    <td>
+                                        <a class="has-text-link" href="https://shodan.io{{ host.ip }}#{{ service.port }}" target="_blank" rel="noopener">
+                                            <span class="tag is-light is-info">{{ service.port }}</span>
+                                        </a>
+                                    </td>
+                                    <td><span class="is-uppercase">{{ service.transport }}</span></td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {% if not ns_services.has_services %}
+                            <tr><td colspan="4" class="has-text-centered has-text-grey-italic">No open services maps recorded inside database.</td></tr>
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
 
-    <p id="cve-list" class="title is-3 is-spaced">Security vulnerability (CVE)</p>
-    <table data-sortable class="table is-hoverable is-bordered">
-        <thead>
-        <tr>
-            <th>CVE</th>
-            <th>Count</th>
-            <th>CVSS</th>
-            <th>Description</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for cve in cves %}
-            <tr>
-                <td><a href="https://nvd.nist.gov/vuln/detail/{{ cve.cveid }}">{{ cve.cveid }}</a></td>
-                <td>{{ cve.count }}</td>
-                <td>{{ cve.cvss }}</td>
-                <td>{{ cve.summary }}</td>
-            </tr>
+                <!-- CVEs Details Section -->
+                <p class="subtitle is-5 mt-4"><i class="bi bi-shield-slash-fill mr-2 has-text-danger"></i>Vulnerabilities</p>
+                <div class="table-container">
+                    <table class="table is-hoverable is-bordered is-fullwidth">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%">CVE ID</th>
+                                <th style="width: 10%">CVSS Score</th>
+                                <th>Vulnerability Summary Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% set ns_vuln = namespace(has_vulns=false) %}
+                        {% for vuln in vulns %}
+                            {% if vuln.ip == host.ip %}
+                                {% set ns_vuln.has_vulns = true %}
+                                <tr>
+                                    <td>
+                                        <a class="has-text-danger has-text-weight-bold" href="https://nvd.nist.gov/vuln/detail/{{ vuln.cveid }}" target="_blank" rel="noopener">
+                                            {{ vuln.cveid }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="tag {{ 'is-danger' if vuln.cvss and vuln.cvss >= 7.0 else ('is-warning' if vuln.cvss and vuln.cvss >= 4.0 else 'is-info') }} has-text-weight-bold">
+                                            {{ vuln.cvss or 'N/A' }}
+                                        </span>
+                                    </td>
+                                    <td><p class="is-size-7">{{ vuln.summary or 'No public descriptions details synchronized.' }}</p></td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {% if not ns_vuln.has_vulns %}
+                            <tr><td colspan="3" class="has-text-centered has-text-grey-italic">No vulnerabilities stored for this host.</td></tr>
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         {% endfor %}
-        </tbody>
-    </table>
+        <!-- Global Threat Distribution Index (CVE) -->
+        <p id="cve-list" class="title is-3 is-spaced mt-6">Global Threat Distribution Index (CVE)</p>
+        <div class="table-container box mb-6">
+            <table class="table is-hoverable is-bordered is-striped is-fullwidth">
+                <thead>
+                    <tr class="is-selected">
+                        <th>Identified CVE ID</th>
+                        <th>Exploited Host Count</th>
+                        <th>CVSS Rating</th>
+                        <th>Vulnerability Target Summary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for cve in cves %}
+                    <tr>
+                        <td>
+                            <a class="has-text-danger has-text-weight-bold" href="https://nvd.nist.gov/vuln/detail/{{ cve.cveid }}" target="_blank" rel="noopener">
+                                {{ cve.cveid }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="tag is-dark has-text-weight-bold">{{ cve.count }} hosts affected</span>
+                        </td>
+                        <td>
+                            <span class="tag {{ 'is-danger' if cve.cvss and cve.cvss >= 7.0 else ('is-warning' if cve.cvss and cve.cvss >= 4.0 else 'is-info') }} has-text-weight-bold">
+                                {{ cve.cvss or 'N/A' }}
+                            </span>
+                        </td>
+                        <td><p class="is-size-7">{{ cve.summary }}</p></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div> <!-- Close Main Container (from Piece 1) -->
 
-</body>
-<script>
-    function liveSearch() {
-        let cards = document.querySelectorAll('.section')
-        let search_query = document.getElementById("searchbox").value;
-        for (var i = 0; i < cards.length; i++) {
-            if (cards[i].innerText.toLowerCase()
-                .includes(search_query.toLowerCase())) {
-                cards[i].classList.remove("is-hidden");
-            } else {
-                cards[i].classList.add("is-hidden");
-            }
+    <!-- Interactive Client-Side Features -->
+    <script>
+        /**
+         * Real-time search engine for the report.
+         * Filters the host sections based on user search string inputs.
+         */
+        function liveSearch() {
+            const sections = document.querySelectorAll('.section');
+            const searchInput = document.getElementById("searchbox");
+            if (!searchInput) return;
+            
+            const searchQuery = searchInput.value.toLowerCase().trim();
+
+            sections.forEach(section => {
+                if (searchQuery === "" || section.innerText.toLowerCase().includes(searchQuery)) {
+                    section.classList.remove("is-hidden");
+                } else {
+                    section.classList.add("is-hidden");
+                }
+            });
         }
-    }
 
-    let typingTimer;
-    let typeInterval = 500; // Half a second
-    let searchInput = document.getElementById('searchbox');
-    searchInput.addEventListener('keyup', () => {
-        clearTimeout(typingTimer);
-        typingTimer = setTimeout(liveSearch, typeInterval);
-    });
-</script>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-
-        // Get all "navbar-burger" elements
-        const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
-
-        // Add a click event on each of them
-        $navbarBurgers.forEach(el => {
-            el.addEventListener('click', () => {
-
-                // Get the target from the "data-target" attribute
-                const target = el.dataset.target;
-                const $target = document.getElementById(target);
-
-                // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
-                el.classList.toggle('is-active');
-                $target.classList.toggle('is-active');
-
+        /**
+         * Mobile Responsive Burger Menu Handler.
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            const navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+            navbarBurgers.forEach(el => {
+                el.addEventListener('click', () => {
+                    const targetId = el.dataset.target;
+                    const targetMenu = document.getElementById(targetId);
+                    if (targetMenu) {
+                        el.classList.toggle('is-active');
+                        targetMenu.classList.toggle('is-active');
+                    }
+                });
             });
         });
-
-    });
-    $(document).ready(function () {
-
-        // Check for click events on the navbar burger icon
-        $(".navbar-burger").click(function () {
-
-            // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
-            $(".navbar-burger").toggleClass("is-active");
-            $(".navbar-menu").toggleClass("is-active");
-
-        });
-    });
-</script>
+    </script>
+</body>
 </html>
+
