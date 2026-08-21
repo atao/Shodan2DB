@@ -28,6 +28,9 @@ pip install -r requirements.txt
 ```bash
 Usage: shodan2db.py [OPTIONS] COMMAND [ARGS]...
 
+  Shodan2DB CLI tool for parsing Shodan JSON exports and generating HTML
+  reports.
+
 Options:
   --help  Show this message and exit.
 
@@ -44,8 +47,8 @@ Usage: shodan2db.py parse [OPTIONS]
   Parse the Shodan JSON export file and store data in the database.
 
 Options:
-  -i, --input-file PATH  JSON export file from Shodan.  [required]
-  -d, --database TEXT    Database name or path.         [required]
+  -i, --input-file FILE  JSON or JSON.GZ export file from Shodan.  [required]
+  -d, --database FILE    Target database name or path.  [required]
   -v, --verbose          Verbose mode.
   -h, --help             Show this message and exit.
 ```
@@ -58,9 +61,11 @@ Usage: shodan2db.py export [OPTIONS]
   Generate an HTML report from the data in the database.
 
 Options:
-  -d, --database PATH       Path to the SQLite database file.         [required]
-  -o, --report-file PATH    Output path for the HTML report file.    [default: shodan.html]
-  -t, --template-file PATH  Path to the Jinja2 template file.        [default: templates/report.html]
+  -d, --database FILE       Path to the SQLite database file.  [required]
+  -o, --report-file FILE    Output path for the HTML report file.  [default:
+                            shodan.html]
+  -t, --template-file FILE  Path to the Jinja2 template file.  [default:
+                            templates/report.html]
   -v, --verbose             Verbose mode.
   -h, --help                Show this message and exit.
 ```
