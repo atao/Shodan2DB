@@ -1,15 +1,25 @@
+import gzip
 import json
+import os
 import sqlite3
 import sys
-import os
+
 import click
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, TemplateError
 
 
 class Shodan2DB:
-    # Static method to create tables and views in the SQLite database
+    """
+    Handles SQLite database initialization, data parsing from Shodan JSON files,
+    and HTML report generation for vulnerability metrics.
+    """
+
+    # Static method to create tables, views, and indexes in the SQLite database
     @staticmethod
-    def prepare_database(verbose, database):
+    def init_database(verbose, database):
+        """
+        Initializes the SQLite database schema, creates indexes, and applies performance tweaks.
+        """
         # Ensure the database file has the correct extension
         if not database.endswith(".db"):
             database = f"{database}.db"
@@ -93,9 +103,12 @@ class Shodan2DB:
             )
             raise e
 
-    # Static method to parse a JSON file and insert data into the database
     @staticmethod
     def parser(verbose, inputfile, database):
+        """
+        Parses a JSON or JSON.GZ file line by line and bulk inserts
+        network service and vulnerability records into a SQLite database.
+        """
         # Ensure the database file has the correct extension
         if not database.endswith(".db"):
             database = f"{database}.db"
@@ -111,8 +124,15 @@ class Shodan2DB:
                 conn.execute("PRAGMA synchronous = NORMAL;")
                 cursor = conn.cursor()
 
+                # Automatically handle gzipped compressed files (.gz) vs raw text files
+                is_gzip = inputfile.endswith(".gz")
+                open_func = gzip.open if is_gzip else open
+                open_mode = "rt" if is_gzip else "r"
+
                 # Process the input file line by line to minimize memory usage
-                with open(inputfile, encoding="utf-8") as json_file:
+                with open_func(
+                    inputfile, mode=open_mode, encoding="utf-8"
+                ) as json_file:
                     for line_idx, line in enumerate(json_file, 1):
                         # Skip empty lines
                         if not line.strip():
@@ -122,7 +142,9 @@ class Shodan2DB:
                         try:
                             jsonobject = json.loads(line)
                         except json.JSONDecodeError:
-                            print(f"[!] Skip line {line_idx}: Invalid JSON structure.")
+                            print(
+                                f"[!] Skipping line {line_idx}: Invalid JSON structure."
+                            )
                             continue
 
                         # Extract core identification and network data
@@ -213,7 +235,13 @@ class Shodan2DB:
                                     cursor.execute(
                                         "INSERT OR IGNORE INTO vulnerabilities (ip, cveid, verified, cvss, summary) "
                                         "VALUES (?, ?, ?, ?, ?)",
-                                        (ip_str, cveid, verified, cvss, summary),
+                                        (
+                                            ip_str,
+                                            cveid,
+                                            verified,
+                                            cvss,
+                                            summary,
+                                        ),
                                     )
                                 except sqlite3.Error as e:
                                     print(
@@ -221,7 +249,7 @@ class Shodan2DB:
                                     )
                                     continue
 
-                # Single atomical batch commit after parsing all rows successfully
+                # Single atomic batch commit after parsing all rows successfully
                 conn.commit()
 
         except FileNotFoundError:
@@ -234,12 +262,16 @@ class Shodan2DB:
             print(f"[-] Critical database connection error: {e}", file=sys.stderr)
             sys.exit(1)
 
-    # Static method to generate an HTML report from the database data
     @staticmethod
     def export(verbose, exportfile, database, template_file):
+        """
+        Fetches vulnerability data from SQLite, correlates host metrics,
+        and renders an HTML report using a Jinja2 template structure.
+        """
         # Ensure the export report file has the correct HTML extension
         if not exportfile.endswith(".html"):
             exportfile = f"{exportfile}.html"
+
         # Ensure the database file has the correct extension
         if not database.endswith(".db"):
             database = f"{database}.db"
@@ -287,6 +319,7 @@ class Shodan2DB:
             print("[!] Please provide a valid database name.", file=sys.stderr)
             sys.exit(1)
 
+        # FIX: This block is now outside the except block, resolving the unreachable code issue
         if verbose:
             print("[+] Rendering template and generating HTML report...")
 
@@ -314,9 +347,16 @@ class Shodan2DB:
             if verbose:
                 print(f"[+] Wrote report : {exportfile}")
 
-        except Exception as e:
+        except TemplateError as err:
             print(
-                f"[!] Error during template rendering or file writing: {e}",
+                f"[!] Jinja2 template rendering error: {err}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        except OSError as err:
+            print(
+                f"[!] File system I/O error writing report: {err}",
                 file=sys.stderr,
             )
             sys.exit(1)
@@ -325,6 +365,9 @@ class Shodan2DB:
 # Define the click group to organize commands
 @click.group()
 def cli():
+    """
+    Shodan2DB CLI tool for parsing Shodan JSON exports and generating HTML reports.
+    """
     pass
 
 
@@ -337,19 +380,23 @@ def cli():
 @click.option(
     "--input-file",
     "-i",
-    help="JSON export file from Shodan.",
+    help="JSON or JSON.GZ export file from Shodan.",
     required=True,
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
 @click.option(
-    "--database", "-d", help="Database name or path.", required=True, type=str
+    "--database",
+    "-d",
+    help="Target database name or path.",
+    required=True,
+    type=click.Path(file_okay=True, dir_okay=False, writable=True),
 )
 @click.option("--verbose", "-v", is_flag=True, help="Verbose mode.")
 def parse(verbose, database, input_file):
     """
     Parse the Shodan JSON export file and store data in the database.
     """
-    Shodan2DB.prepare_database(verbose=verbose, database=database)
+    Shodan2DB.init_database(verbose=verbose, database=database)
     Shodan2DB.parser(verbose=verbose, database=database, inputfile=input_file)
 
 
@@ -364,7 +411,7 @@ def parse(verbose, database, input_file):
     "-d",
     help="Path to the SQLite database file.",
     required=True,
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
 @click.option(
     "--report-file",
@@ -372,7 +419,7 @@ def parse(verbose, database, input_file):
     default="shodan.html",
     help="Output path for the HTML report file.",
     show_default=True,
-    type=click.Path(writable=True),
+    type=click.Path(writable=True, file_okay=True, dir_okay=False),
 )
 @click.option(
     "--template-file",
@@ -380,7 +427,7 @@ def parse(verbose, database, input_file):
     default="templates/report.html",
     help="Path to the Jinja2 template file.",
     show_default=True,
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
 @click.option("--verbose", "-v", is_flag=True, help="Verbose mode.")
 def export(verbose, database, report_file, template_file):
@@ -401,23 +448,7 @@ cli.add_command(export)
 
 # Main execution block
 if __name__ == "__main__":
-    # Show help message if no arguments are provided
     if len(sys.argv) == 1:
         cli.main(["--help"])
     else:
-        # Check template existence globally only if invoking the export command implicitly
-        if "export" in sys.argv and not any(
-            arg in sys.argv for arg in ["-t", "--template-file"]
-        ):
-            if not os.path.exists("templates") or not os.path.isfile(
-                "templates/report.html"
-            ):
-                print(
-                    "[!] Error: Default 'templates/report.html' not found. "
-                    "Please create it or use -t to specify a template.",
-                    file=sys.stderr,
-                )
-                sys.exit(2)
-
-        # Execute the CLI application
         cli()
