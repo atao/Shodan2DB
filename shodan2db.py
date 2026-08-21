@@ -302,7 +302,7 @@ class Shodan2DB:
 
                 # Fetch target services bound to vulnerable network hosts
                 cursor.execute("""
-                    SELECT DISTINCT ip, port, product, version, transport FROM services
+                    SELECT DISTINCT ip, port, product, version, transport, data FROM services
                     WHERE ip IN (SELECT ip FROM summary WHERE nbvulns IS NOT NULL) ORDER BY ip
                 """)
                 services_list = cursor.fetchall()

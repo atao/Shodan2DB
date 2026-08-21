@@ -214,10 +214,11 @@
                     <table class="table is-hoverable is-bordered is-striped is-fullwidth">
                         <thead>
                             <tr>
-                                <th>Product banner</th>
+                                <th>Product</th>
                                 <th>Version</th>
-                                <th>Port ID</th>
-                                <th>Transport Layer</th>
+                                <th>Port</th>
+                                <th>Transport</th>
+                                <th>Response</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -234,6 +235,7 @@
                                         </a>
                                     </td>
                                     <td><span class="is-uppercase">{{ service.transport }}</span></td>
+                                    <td>{{ service.data.splitlines() | first or 'No data available' }}</td>
                                 </tr>
                             {% endif %}
                         {% endfor %}
