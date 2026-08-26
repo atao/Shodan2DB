@@ -177,7 +177,9 @@
                 <tbody>
                 {% for host in vulns_hosts %}
                     <tr>
-                        <td><a class="has-text-link has-text-weight-bold" href="#{{ host.ip }}">{{ host.ip }}</a></td>
+                        <td>
+                            <a class="has-text-link has-text-weight-bold" href="#{{ host.ip }}">{{ host.ip }}</a>
+                        </td>
                         <td>{{ host.hostnames or 'N/A' }}</td>
                         <td>{{ host.isp or 'N/A' }}</td>
                         <td>{{ host.city or 'N/A' }}</td>
@@ -207,6 +209,9 @@
                         <a href="https://www.shodan.io/host/{{ host.ip }}" target="_blank" rel="noopener" class="title is-4 has-text-white underline">
                             <i class="bi bi-hdd-network-fill mr-2"></i>{{ host.ip }}
                         </a>
+                        <button class="button is-small is-ghost has-text-grey-light ml-2 copy-ip" type="button" data-ip="{{ host.ip }}" title="Copier l’adresse IP" aria-label="Copier {{ host.ip }}">
+                            <span class="icon"><i class="bi bi-clipboard"></i></span>
+                        </button>
                         <span class="tag is-danger is-light is-rounded is-medium is-pulled-right has-text-weight-bold">
                             {{ host.nbvulns or 0 }} Vulns
                         </span>
@@ -352,7 +357,9 @@
                 <tbody>
                 {% for host in all_hosts %}
                     <tr>
-                        <td><a class="has-text-link has-text-weight-bold" href="#{{ host.ip }}">{{ host.ip }}</a></td>
+                        <td>
+                            <a class="has-text-link has-text-weight-bold" href="#{{ host.ip }}">{{ host.ip }}</a>
+                        </td>
                         <td>{{ host.hostnames or 'N/A' }}</td>
                         <td>{{ host.isp or 'N/A' }}</td>
                         <td>{{ host.city or 'N/A' }}</td>
@@ -379,6 +386,9 @@
                         <a href="https://www.shodan.io/host/{{ host.ip }}" target="_blank" rel="noopener" class="title is-4 has-text-white underline">
                             <i class="bi bi-hdd-network-fill mr-2"></i>{{ host.ip }}
                         </a>
+                        <button class="button is-small is-ghost has-text-grey-light ml-2 copy-ip" type="button" data-ip="{{ host.ip }}" title="Copier l’adresse IP" aria-label="Copier {{ host.ip }}">
+                            <span class="icon"><i class="bi bi-clipboard"></i></span>
+                        </button>
                         <span class="tag is-success is-light is-rounded is-medium is-pulled-right has-text-weight-bold">No Vulns</span>
                     </p>
                     <p class="subtitle is-6 mt-1">{{ host.hostnames or 'No associated hostname' }}</p>
@@ -432,6 +442,39 @@
 
     <!-- Interactive Client-Side Features -->
     <script>
+        function copyIp(button) {
+            const ip = button.dataset.ip;
+            const icon = button.querySelector('i');
+            const copied = () => {
+                icon.className = 'bi bi-check2';
+                button.title = 'Adresse IP copiée';
+                window.setTimeout(() => {
+                    icon.className = 'bi bi-clipboard';
+                    button.title = 'Copier l’adresse IP';
+                }, 1500);
+            };
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(ip).then(copied);
+                return;
+            }
+
+            const textArea = document.createElement('textarea');
+            textArea.value = ip;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            textArea.remove();
+            copied();
+        }
+
+        document.addEventListener('click', event => {
+            const copyButton = event.target.closest('.copy-ip');
+            if (copyButton) copyIp(copyButton);
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.sortable-table').forEach(table => {
                 table.querySelectorAll('thead th').forEach(header => {
