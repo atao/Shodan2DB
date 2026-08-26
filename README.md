@@ -45,7 +45,7 @@ Options:
 
 Commands:
   export  Generate an HTML report from the data in the database.
-  parse   Parse exported file from Shodan and store the data in a SQLite database.
+  parse   Parse exported file from Shodan and store into a SQLite database.
 ```
 
 ### Command : parse
@@ -53,7 +53,7 @@ Commands:
 ```bash
 Usage: shodan2db.py parse [OPTIONS]
 
-  Parse exported file from Shodan and store the data in a SQLite database.
+  Parse exported file from Shodan and store into a SQLite database.
 
 Options:
   -i, --input-file FILE  JSON or JSON.GZ export file from Shodan.  [required]
