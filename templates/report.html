@@ -93,7 +93,6 @@
             </div>
             <div id="navMenu" class="navbar-menu">
                 <div class="navbar-start">
-                    <a class="navbar-item" href="#hosts-list">Hosts</a>
                     <a class="navbar-item" href="#vulns-list">Vulnerabilities</a>
                     <a class="navbar-item" href="#cve-list">CVE</a>
                     <a class="navbar-item" href="#all-list">All</a>
@@ -153,7 +152,7 @@
         </nav>
 
         <!-- Global Hosts Summary Table -->
-        <p id="hosts-list" class="title is-3 is-spaced">Vulnerable Hosts</p>
+        <p id="vulns-list" class="title is-3 is-spaced">Vulnerable Hosts</p>
         <div class="table-container box">
             <table class="table is-hoverable is-bordered is-striped is-fullwidth">
                 <thead>
@@ -339,7 +338,6 @@
                         <th>ISP Provider</th>
                         <th>City Location</th>
                         <th>Tags</th>
-                        <th>Vulns Count</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -356,7 +354,6 @@
                                 <span class="has-text-grey-light">None</span>
                             {% endif %}
                         </td>
-                        <td><span class="tag is-success has-text-weight-bold">{{ host.nbvulns or 0 }}</span></td>
                     </tr>
                 {% else %}
                     <tr><td colspan="6" class="has-text-centered has-text-grey">No non-vulnerable hosts recorded.</td></tr>
