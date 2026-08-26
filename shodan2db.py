@@ -289,9 +289,19 @@ class Shodan2DB:
                 # Fetch distinct vulnerable hosts sorted by total vulnerability count
                 cursor.execute("""
                     SELECT DISTINCT ip, hostnames, isp, city, tags, nbvulns FROM summary
-                    WHERE nbvulns IS NOT NULL ORDER BY nbvulns DESC
+                    WHERE nbvulns > 0 ORDER BY nbvulns DESC
                 """)
-                hosts_list = cursor.fetchall()
+                vulns_hosts_list = cursor.fetchall()
+
+                # Keep hosts without reported vulnerabilities for the final inventory table.
+                cursor.execute("""
+                    SELECT DISTINCT ip, hostnames, isp, city, tags FROM summary
+                    WHERE nbvulns IS NULL OR nbvulns = 0 ORDER BY ip
+                """)
+                all_hosts_list = cursor.fetchall()
+
+                cursor.execute("SELECT COUNT(*) AS total FROM summary")
+                total_hosts = cursor.fetchone()["total"]
 
                 # Fetch individual vulnerabilities ordered by IP and severity level
                 cursor.execute("""
@@ -303,9 +313,17 @@ class Shodan2DB:
                 # Fetch target services bound to vulnerable network hosts
                 cursor.execute("""
                     SELECT DISTINCT ip, port, product, version, transport, data FROM services
-                    WHERE ip IN (SELECT ip FROM summary WHERE nbvulns IS NOT NULL) ORDER BY ip
+                    WHERE ip IN (SELECT ip FROM summary WHERE nbvulns > 0) ORDER BY ip
                 """)
                 services_list = cursor.fetchall()
+
+                # Fetch services for the complete non-vulnerable host inventory.
+                cursor.execute("""
+                    SELECT DISTINCT ip, port, product, version, transport, data FROM services
+                    WHERE ip IN (SELECT ip FROM summary WHERE nbvulns IS NULL OR nbvulns = 0)
+                    ORDER BY ip, port
+                """)
+                all_services_list = cursor.fetchall()
 
                 # Fetch consolidated statistics for recurring CVEs across infrastructure
                 cursor.execute("""
@@ -334,8 +352,11 @@ class Shodan2DB:
 
             # Map dataset lists directly onto targeted template fields
             content = template.render(
-                hosts=hosts_list,
+                vulns_hosts=vulns_hosts_list,
+                all_hosts=all_hosts_list,
+                total_hosts=total_hosts,
                 services=services_list,
+                all_services=all_services_list,
                 vulns=vulns_list,
                 cves=cves_list,
             )

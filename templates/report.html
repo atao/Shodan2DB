@@ -50,6 +50,9 @@
             transform: translateY(-2px);
             box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08) !important;
         }
+        .border-non-vulnerability {
+            border-left: 6px solid #2ecc71 !important;
+        }
         .float-right {
             float: right !important;
         }
@@ -93,6 +96,7 @@
                     <a class="navbar-item" href="#hosts-list">Hosts</a>
                     <a class="navbar-item" href="#vulns-list">Vulnerabilities</a>
                     <a class="navbar-item" href="#cve-list">CVE</a>
+                    <a class="navbar-item" href="#all-list">All</a>
                 </div>
                 <div class="navbar-end">
                     <div class="navbar-item">
@@ -119,7 +123,13 @@
             <div class="level-item has-text-centered">
                 <div>
                     <p class="heading">Hosts</p>
-                    <p class="title has-text-info">{{ hosts | length }}</p>
+                    <p class="title has-text-info">{{ total_hosts }}</p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="heading">Vulnerable Hosts</p>
+                    <p class="title has-text-danger">{{ vulns_hosts | length }}</p>
                 </div>
             </div>
             <div class="level-item has-text-centered">
@@ -130,7 +140,7 @@
             </div>
             <div class="level-item has-text-centered">
                 <div>
-                    <p class="heading">Products</p>
+                    <p class="heading">Services</p>
                     <p class="title has-text-warning">{{ services | length }}</p>
                 </div>
             </div>
@@ -143,7 +153,7 @@
         </nav>
 
         <!-- Global Hosts Summary Table -->
-        <p id="hosts-list" class="title is-3 is-spaced">Hosts</p>
+        <p id="hosts-list" class="title is-3 is-spaced">Vulnerable Hosts</p>
         <div class="table-container box">
             <table class="table is-hoverable is-bordered is-striped is-fullwidth">
                 <thead>
@@ -157,7 +167,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for host in hosts %}
+                {% for host in vulns_hosts %}
                     <tr>
                         <td><a class="has-text-link has-text-weight-bold" href="#{{ host.ip }}">{{ host.ip }}</a></td>
                         <td>{{ host.hostnames or 'N/A' }}</td>
@@ -181,10 +191,8 @@
             </table>
         </div>
 
-        <!-- Vulnerabilities Host-by-Host Breakdown Details -->
-        <p id="vulns-list" class="title is-3 is-spaced mt-6">Detailed Host Insecurity Profiles</p>
         <!-- Loop over each host to display sub-tables -->
-        {% for host in hosts %}
+        {% for host in vulns_hosts %}
             <section class="section box my-5 py-5 border-vulnerability">
                 <div id="{{ host.ip }}" class="host-banner mb-4">
                     <p>
@@ -214,7 +222,7 @@
                     <table class="table is-hoverable is-bordered is-striped is-fullwidth">
                         <thead>
                             <tr>
-                                <th>Product</th>
+                                <th>Service</th>
                                 <th>Version</th>
                                 <th>Port</th>
                                 <th>Transport</th>
@@ -319,9 +327,103 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Complete inventory of hosts without reported vulnerabilities -->
+        <p id="all-list" class="title is-3 is-spaced mt-6">All Hosts</p>
+        <div class="table-container box mb-6">
+            <table class="table is-hoverable is-bordered is-striped is-fullwidth">
+                <thead>
+                    <tr class="is-selected">
+                        <th>IP Address</th>
+                        <th>Hostnames</th>
+                        <th>ISP Provider</th>
+                        <th>City Location</th>
+                        <th>Tags</th>
+                        <th>Vulns Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for host in all_hosts %}
+                    <tr>
+                        <td><a class="has-text-link has-text-weight-bold" href="#{{ host.ip }}">{{ host.ip }}</a></td>
+                        <td>{{ host.hostnames or 'N/A' }}</td>
+                        <td>{{ host.isp or 'N/A' }}</td>
+                        <td>{{ host.city or 'N/A' }}</td>
+                        <td>
+                            {% if host.tags %}
+                                <span class="tag is-info is-light">{{ host.tags }}</span>
+                            {% else %}
+                                <span class="has-text-grey-light">None</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="tag is-success has-text-weight-bold">{{ host.nbvulns or 0 }}</span></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="has-text-centered has-text-grey">No non-vulnerable hosts recorded.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Services details for hosts without reported vulnerabilities -->
+        {% for host in all_hosts %}
+            <section class="section box my-5 py-5 border-non-vulnerability">
+                <div id="{{ host.ip }}" class="host-banner mb-4">
+                    <p>
+                        <a href="https://www.shodan.io/host/{{ host.ip }}" target="_blank" rel="noopener" class="title is-4 has-text-white underline">
+                            <i class="bi bi-hdd-network-fill mr-2"></i>{{ host.ip }}
+                        </a>
+                        <span class="tag is-success is-light is-rounded is-medium float-right has-text-weight-bold">No Vulns</span>
+                    </p>
+                    <p class="subtitle is-6 mt-1">{{ host.hostnames or 'No associated hostname' }}</p>
+                    <div class="content pt-2" style="color: #ffffff !important;">
+                        <p>
+                            <strong>ISP :</strong> {{ host.isp or 'Unknown ISP' }}
+                            <span class="mx-3">|</span>
+                            <strong>City :</strong> {{ host.city or 'Unknown City' }}
+                            {% if host.tags %}
+                                <span class="mx-3">|</span> <strong>Tags :</strong> <span class="tag is-small is-warning has-text-dark">{{ host.tags }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <p class="subtitle is-5 mt-5"><i class="bi bi-cpu mr-2"></i>Exposed Open Ports & Services</p>
+                <div class="table-container">
+                    <table class="table is-hoverable is-bordered is-striped is-fullwidth">
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th>Version</th>
+                                <th>Port</th>
+                                <th>Transport</th>
+                                <th>Response</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% set ns_all_services = namespace(has_services=false) %}
+                        {% for service in all_services %}
+                            {% if service.ip == host.ip %}
+                                {% set ns_all_services.has_services = true %}
+                                <tr>
+                                    <td><strong>{{ service.product or 'Generic Port Probe' }}</strong></td>
+                                    <td>{{ service.version or 'Undetermined' }}</td>
+                                    <td><span class="tag is-light is-info">{{ service.port }}</span></td>
+                                    <td><span class="is-uppercase">{{ service.transport or 'Undetermined' }}</span></td>
+                                    <td>{{ (service.data or '').splitlines() | first or 'No data available' }}</td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {% if not ns_all_services.has_services %}
+                            <tr><td colspan="5" class="has-text-centered has-text-grey-italic">No open services recorded inside database.</td></tr>
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        {% endfor %}
     </div> <!-- Close Main Container (from Piece 1) -->
 
-    <!-- Interactive Client-Side Features -->
     <!-- Interactive Client-Side Features -->
     <script>
         /**
