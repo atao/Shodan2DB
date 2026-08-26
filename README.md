@@ -6,14 +6,6 @@ Shodan JSON exports are stored in a local SQLite database, enabling repeatable a
 
 ## Features
 
-# Shodan2DB
-
-Shodan2DB is a tool for generating internet-exposed attack surface reports from Shodan exports. It inventories internet-facing hosts and services, identifies associated vulnerabilities, maps CVEs to exposed assets, and generates HTML reports to support security assessments and remediation prioritization.
-
-Shodan JSON exports are stored in a local SQLite database, enabling repeatable analysis, offline investigation, and consistent report generation.
-
-## Features
-
 - **Attack surface inventory** covering exposed hosts, services, ports, and technologies.
 - **Vulnerable host inventory** with vulnerability counts and affected services.
 - **CVE information** including CVSS scores, verification status, and vulnerability summaries.
