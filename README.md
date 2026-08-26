@@ -1,8 +1,12 @@
 # Shodan2DB
+This tool generates a report on the attack surface exposed on the internet based on Shodan exports.
 
-Shodan2DB is a tool for generating internet-exposed attack surface reports from Shodan exports. It inventories internet-facing hosts and services, identifies associated vulnerabilities, maps CVEs to exposed assets, and generates HTML reports to support security assessments and remediation prioritization.
+Shodan exports contain “vulns” tags and other tags that are not directly available online or through subscriptions such as Small Business, Corporate, or Enterprise.
+With this tool, they become accessible, enabling an in-depth analysis of vulnerabilities and helping to prepare a remediation plan.
 
-Shodan JSON exports are stored in a local SQLite database, enabling repeatable analysis, offline investigation, and consistent report generation.
+Reports can be customized in [templates/report.html](templates/report.html) using Jinja2.
+
+The provided template uses Bulma CSS.
 
 ## Features
 
@@ -123,7 +127,7 @@ Upon initialization, the tool optimizes SQLite pragmas and automatically structu
 
 ## Templates Customization
 
-The presentation architecture is entirely modular. You can seamlessly customize the structural layout or interface themes inside `templates/report.html`. 
+The presentation architecture is entirely modular. You can seamlessly customize the structural layout or interface themes inside [templates/report.html](templates/report.html). 
 
 The default layout leverages **Bulma CSS** to render high-contrast, professional cybersecurity matrices with custom conditional coloring for CVSS threat scales.
 
