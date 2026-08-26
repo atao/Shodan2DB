@@ -185,7 +185,9 @@
                         <td>{{ host.city or 'N/A' }}</td>
                         <td>
                             {% if host.tags %}
-                                <span class="tag is-info is-light">{{ host.tags }}</span>
+                                {% for tag in host.tags.split() %}
+                                    <span class="tag is-info is-light">{{ tag }}</span>
+                                {% endfor %}
                             {% else %}
                                 <span class="has-text-grey-light">None</span>
                             {% endif %}
@@ -223,7 +225,10 @@
                             <span class="mx-3">|</span> 
                             <strong>City :</strong> {{ host.city or 'Unknown City' }}
                             {% if host.tags %}
-                                <span class="mx-3">|</span> <strong>Tags :</strong> <span class="tag is-small is-warning has-text-dark">{{ host.tags }}</span>
+                                <span class="mx-3">|</span> <strong>Tags :</strong>
+                                {% for tag in host.tags.split() %}
+                                    <span class="tag is-small is-warning has-text-dark">{{ tag }}</span>
+                                {% endfor %}
                             {% endif %}
                         </p>
                     </div>
@@ -365,7 +370,9 @@
                         <td>{{ host.city or 'N/A' }}</td>
                         <td>
                             {% if host.tags %}
-                                <span class="tag is-info is-light">{{ host.tags }}</span>
+                                {% for tag in host.tags.split() %}
+                                    <span class="tag is-info is-light">{{ tag }}</span>
+                                {% endfor %}
                             {% else %}
                                 <span class="has-text-grey-light">None</span>
                             {% endif %}
@@ -398,7 +405,10 @@
                             <span class="mx-3">|</span>
                             <strong>City :</strong> {{ host.city or 'Unknown City' }}
                             {% if host.tags %}
-                                <span class="mx-3">|</span> <strong>Tags :</strong> <span class="tag is-small is-warning has-text-dark">{{ host.tags }}</span>
+                                <span class="mx-3">|</span> <strong>Tags :</strong>
+                                {% for tag in host.tags.split() %}
+                                    <span class="tag is-small is-warning has-text-dark">{{ tag }}</span>
+                                {% endfor %}
                             {% endif %}
                         </p>
                     </div>
