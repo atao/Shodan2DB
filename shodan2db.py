@@ -415,7 +415,7 @@ def cli():
 @click.option("--verbose", "-v", is_flag=True, help="Verbose mode.")
 def parse(verbose, database, input_file):
     """
-    Parse the Shodan JSON export file and store data in the database.
+    Parse exported file from Shodan and store the data in a SQLite database.
     """
     Shodan2DB.init_database(verbose=verbose, database=database)
     Shodan2DB.parser(verbose=verbose, database=database, inputfile=input_file)
