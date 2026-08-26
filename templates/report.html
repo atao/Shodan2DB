@@ -101,11 +101,11 @@
                 <a class="navbar-item has-text-weight-semibold" href="#top">
                     Shodan2DB
                 </a>
-                <div class="navbar-burger burger" data-target="navMenu" onclick="document.getElementById('navMenu').classList.toggle('is-active');">
+                <button class="navbar-burger burger" type="button" data-target="navMenu" aria-label="Ouvrir le menu" aria-expanded="false">
                     <span></span>
                     <span></span>
                     <span></span>
-                </div>
+                </button>
             </div>
             <div id="navMenu" class="navbar-menu">
                 <div class="navbar-start">
@@ -492,8 +492,9 @@
                     const targetId = el.dataset.target;
                     const targetMenu = document.getElementById(targetId);
                     if (targetMenu) {
-                        el.classList.toggle('is-active');
-                        targetMenu.classList.toggle('is-active');
+                        const isActive = el.classList.toggle('is-active');
+                        targetMenu.classList.toggle('is-active', isActive);
+                        el.setAttribute('aria-expanded', String(isActive));
                     }
                 });
             });
