@@ -1,29 +1,42 @@
 # Shodan2DB
 
-🔌 Utility designed to parse Shodan JSON exports, store them into an optimized SQLite database, and generate comprehensive HTML vulnerability exposure reports.
+Shodan2DB is a tool for generating internet-exposed attack surface reports from Shodan exports. It inventories internet-facing hosts and services, identifies associated vulnerabilities, maps CVEs to exposed assets, and generates HTML reports to support security assessments and remediation prioritization.
 
-## Purpose
+Shodan JSON exports are stored in a local SQLite database, enabling repeatable analysis, offline investigation, and consistent report generation.
 
-The primary objective of this tool is to centralize Shodan export data into a structured SQLite environment for advanced querying and infrastructure monitoring.
+## Features
 
-**Account Restriction Bypass :** Shodan JSON exports natively include valuable fields like `"vulns"` and `"tags"` regardless of your tier. This tool extracts these premium attributes—normally locked behind expensive Small Business, Corporate, or Enterprise API accounts—and surfaces them directly for analysis.
+# Shodan2DB
 
-## Key Features
+Shodan2DB is a tool for generating internet-exposed attack surface reports from Shodan exports. It inventories internet-facing hosts and services, identifies associated vulnerabilities, maps CVEs to exposed assets, and generates HTML reports to support security assessments and remediation prioritization.
 
-- **Blazing Fast Imports:** Leverages SQLite WAL (Write-Ahead Logging) and atomic transaction batching, reducing disk I/O bottlenecks. Perfect for running on lightweight hardware.
-- **Robust Exception Handling:** Implements defensive data extraction wrappers preventing common `KeyError` crashes caused by incomplete Shodan geographic metadata.
-- **Dynamic HTML Indexing:** Generates responsive, elegant sortable tables styled with **Bulma CSS** and **Bootstrap Icons**, complete with client-side filtering and real-time live search.
-- **Strict Data Integrity:** Enforces database-level composite unique constraints (`UNIQUE(ip, cveid)`) preventing redundant storage overhead during overlapping historical imports.
+Shodan JSON exports are stored in a local SQLite database, enabling repeatable analysis, offline investigation, and consistent report generation.
+
+## Features
+
+- **Attack surface inventory** covering exposed hosts, services, ports, and technologies.
+- **Vulnerable host inventory** with vulnerability counts and affected services.
+- **CVE information** including CVSS scores, verification status, and vulnerability summaries.
+- **Consolidated CVE statistics** to highlight recurring and widespread vulnerabilities.
+- **Exposure analysis** to support risk-based remediation prioritization.
+- **Shodan export support** for JSON and compressed JSON.GZ files.
+- **Local SQLite storage** for services, network metadata, tags, and vulnerabilities.
+- **Vulnerability deduplication** based on IP address and CVE pairs.
+- **HTML report generation** with sortable tables and client-side search.
+- **Customizable reports** using a Jinja2 template.
 
 ## Requirements
 
-Ensure your local execution environment satisfies the necessary dependencies:
+- Python 3.8 or later.
+- An export obtained through Shodan’s supported export features.
+
+Install the dependencies:
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-## Usage and Options
+## Commands
 
 ```bash
 Usage: shodan2db.py [OPTIONS] COMMAND [ARGS]...
@@ -112,7 +125,7 @@ python shodan2db.py export -d ./example_database.db -o ./example_report.html -v
 
 Upon initialization, the tool optimizes SQLite pragmas and automatically structures the underlying relational objects:
 
-- **`services`**: Houses core operational network service logs, banners, geo-coordinates, ISP allocations, and metadata.
+- **`services`**: Houses core operational network service logs, banners, localisation, ISP allocations, and metadata.
 - **`vulnerabilities`**: Stores indexed granular mappings of CVE IDs alongside their verified CVSS scores and threat summary descriptions.
 - **`Summary` (View)**: An internal prioritized virtual evaluation layer sorting network entities by physical exposure risk (`nbvulns DESC`).
 
