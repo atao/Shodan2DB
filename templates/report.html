@@ -101,7 +101,7 @@
                 <div class="navbar-end">
                     <div class="navbar-item">
                         <p class="control has-icons-left">
-                            <input class="input is-rounded" type="search" placeholder="Filter IP Address..." id="searchbox" oninput="liveSearch()" autofocus>
+                            <input class="input is-rounded" type="search" placeholder="Filter IP Address" id="searchbox" oninput="liveSearch()" onclick="this.value = ''; liveSearch();" autofocus>
                             <span class="icon is-medium is-left">
                                 <i class="bi bi-search"></i>
                             </span>
