@@ -12,7 +12,7 @@ The primary objective of this tool is to centralize Shodan export data into a st
 
 - **Blazing Fast Imports:** Leverages SQLite WAL (Write-Ahead Logging) and atomic transaction batching, reducing disk I/O bottlenecks. Perfect for running on lightweight hardware.
 - **Robust Exception Handling:** Implements defensive data extraction wrappers preventing common `KeyError` crashes caused by incomplete Shodan geographic metadata.
-- **Dynamic HTML Indexing:** Generates responsive, elegant dashboards styled with **Bulma CSS** and **Bootstrap Icons**, complete with client-side filtering and real-time live search.
+- **Dynamic HTML Indexing:** Generates responsive, elegant sortable tables styled with **Bulma CSS** and **Bootstrap Icons**, complete with client-side filtering and real-time live search.
 - **Strict Data Integrity:** Enforces database-level composite unique constraints (`UNIQUE(ip, cveid)`) preventing redundant storage overhead during overlapping historical imports.
 
 ## Requirements
