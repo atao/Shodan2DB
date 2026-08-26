@@ -56,21 +56,14 @@
         .border-non-vulnerability {
             border-left: 6px solid #2ecc71 !important;
         }
-        .float-right {
-            float: right !important;
-        }
         .underline {
             text-decoration: underline;
-        }
-        .table-container {
-            margin-bottom: 1.5rem;
         }
         html {
             scroll-behavior: smooth;
             scroll-padding-top: 5rem;
         }
         .is-size-7 {
-            font-size: 0.85rem !important;
             line-height: 1.4;
         }
         .table thead th {
@@ -214,7 +207,7 @@
                         <a href="https://www.shodan.io/host/{{ host.ip }}" target="_blank" rel="noopener" class="title is-4 has-text-white underline">
                             <i class="bi bi-hdd-network-fill mr-2"></i>{{ host.ip }}
                         </a>
-                        <span class="tag is-danger is-light is-rounded is-medium float-right has-text-weight-bold">
+                        <span class="tag is-danger is-light is-rounded is-medium is-pulled-right has-text-weight-bold">
                             {{ host.nbvulns or 0 }} Vulns
                         </span>
                     </p>
@@ -386,7 +379,7 @@
                         <a href="https://www.shodan.io/host/{{ host.ip }}" target="_blank" rel="noopener" class="title is-4 has-text-white underline">
                             <i class="bi bi-hdd-network-fill mr-2"></i>{{ host.ip }}
                         </a>
-                        <span class="tag is-success is-light is-rounded is-medium float-right has-text-weight-bold">No Vulns</span>
+                        <span class="tag is-success is-light is-rounded is-medium is-pulled-right has-text-weight-bold">No Vulns</span>
                     </p>
                     <p class="subtitle is-6 mt-1">{{ host.hostnames or 'No associated hostname' }}</p>
                     <div class="content pt-2" style="color: #ffffff !important;">
