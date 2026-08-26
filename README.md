@@ -1,8 +1,12 @@
 # Shodan2DB
 This tool generates a report on the attack surface exposed on the internet based on Shodan exports.
 
-Shodan exports contain “vulns” tags and other tags that are not directly available online or through subscriptions such as Small Business, Corporate, or Enterprise.
-With this tool, they become accessible, enabling an in-depth analysis of vulnerabilities and helping to prepare a remediation plan.
+Shodan exports include vulnerability data and tags (`vuln` and `tag`) that aren’t directly accessible online or through subscriptions such as Small Business, Corporate, or Enterprise.
+This tool unlocks that data, enabling deeper vulnerability analysis and helping teams develop effective remediation plans.
+
+`vuln` and `tag` are available with Membership plan.
+
+You can sometimes find a Shodan lifetime membership on sale for as little as $4 or $5 during special events, such as the platform’s anniversary or Black Friday. The regular price is $49 as a one-time payment, with no annual renewal fee.
 
 Reports can be customized in [templates/report.html](templates/report.html) using Jinja2.
 
