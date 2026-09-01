@@ -8,7 +8,7 @@ import click
 from jinja2 import Environment, FileSystemLoader, TemplateError
 
 # Import osinttracker exporter module
-from plugins.export_osinttracker import OsintTrackerExporter
+from plugins.export_osintracker import OsintTrackerExporter
 
 
 class Shodan2DB:
