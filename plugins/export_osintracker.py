@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Export assets from Shodan2DB SQLite database to osinttracker JSON format.
+Export assets from Shodan2DB SQLite database to osintracker JSON format.
 Creates entities (IPs, domains, hostnames) and relationships between them.
 
 Format reference: https://wiki.osintracker.com/data/import-export
@@ -17,10 +17,10 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 import click
 
 
-class OsintTrackerExporter:
-    """Handles exporting Shodan2DB data to osinttracker JSON format."""
+class OsintrackerExporter:
+    """Handles exporting Shodan2DB data to osintracker JSON format."""
 
-    # Entity type IDs from osinttracker instance
+    # Entity type IDs from osintracker instance
     ENTITY_TYPES = {
         "ip": "clh6sgxq9tww10buuhzho55jg",  # Internet > IP
         "hostname": "clh6sdulhtz2s0buj08lo5r40",  # Internet > domain name (or create Hostname type)
@@ -120,7 +120,7 @@ class OsintTrackerExporter:
         vuln_count: int,
         cve_ids: List[str],
     ) -> Dict[str, Any]:
-        """Create an osinttracker entity."""
+        """Create an osintracker entity."""
         entity_id = self._get_entity_id(entity_type, value)
 
         # Determine max CVSS for color coding
@@ -197,11 +197,11 @@ class OsintTrackerExporter:
         return str(uuid.uuid4())
 
     def export_to_json(self, output_file: str) -> None:
-        """Export all assets to osinttracker JSON format."""
+        """Export all assets to osintracker JSON format."""
         if not output_file.endswith(".json"):
             output_file = f"{output_file}.json"
 
-        self._log(f"Exporting to osinttracker format: {output_file}...")
+        self._log(f"Exporting to osintracker format: {output_file}...")
 
         try:
             with sqlite3.connect(self.database) as conn:
@@ -338,8 +338,8 @@ if __name__ == "__main__":
     @click.option(
         "-o",
         "--output",
-        default="assets_osinttracker.json",
-        help="Output JSON file path (default: assets_osinttracker.json)",
+        default="assets_osintracker.json",
+        help="Output JSON file path (default: assets_osintracker.json)",
     )
     @click.option(
         "-a",
@@ -355,13 +355,13 @@ if __name__ == "__main__":
     )
     def main(database: str, output: str, alias: Optional[str], verbose: bool) -> None:
         """
-        Export Shodan2DB assets to osinttracker JSON format.
+        Export Shodan2DB assets to osintracker JSON format.
 
         Generates entities (IPs, hostnames, domains) with relationships.
-        Compatible with osinttracker import/export format.
+        Compatible with osintracker import/export format.
         """
         try:
-            exporter = OsintTrackerExporter(database, verbose, alias)
+            exporter = OsintrackerExporter(database, verbose, alias)
             exporter.export_to_json(output)
             print(f"[✓] Export completed successfully!")
 

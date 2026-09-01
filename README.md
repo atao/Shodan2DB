@@ -74,17 +74,17 @@ Options:
 ```bash
 Usage: shodan2db.py export [OPTIONS]
 
-  Export data from database (HTML report or osinttracker JSON).
+  Export data from database (HTML report or osintracker JSON).
 
 Options:
   -d, --database FILE       Path to the SQLite database file.  [required]
   -o, --output FILE         Output path for HTML report file.
   -t, --template-file FILE  Path to the Jinja2 template file (HTML export
                             only).  [default: templates/report.html]
-  --osint TEXT              Central entity name for osinttracker export
+  --osint TEXT              Central entity name for osintracker export
                             (default: shodan).
-  --osint-output TEXT       Output path for osinttracker JSON file.  [default:
-                            assets_osinttracker.json]
+  --osint-output TEXT       Output path for osintracker JSON file.  [default:
+                            assets_osintracker.json]
   -v, --verbose             Verbose mode.
   -h, --help                Show this message and exit.
 ```

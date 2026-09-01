@@ -7,8 +7,8 @@ import sys
 import click
 from jinja2 import Environment, FileSystemLoader, TemplateError
 
-# Import osinttracker exporter module
-from plugins.export_osintracker import OsintTrackerExporter
+# Import osintracker exporter module
+from plugins.export_osintracker import OsintrackerExporter
 
 
 class Shodan2DB:
@@ -386,9 +386,9 @@ class Shodan2DB:
             sys.exit(1)
 
     @staticmethod
-    def export_osinttracker(verbose, database, output_file, alias):
+    def export_osintracker(verbose, database, output_file, alias):
         """
-        Export Shodan2DB data to osinttracker JSON format.
+        Export Shodan2DB data to osintracker JSON format.
         Creates entities (IPs, domains, hostnames) and relationships between them.
         """
         # Ensure the database file has the correct extension
@@ -396,15 +396,15 @@ class Shodan2DB:
             database = f"{database}.db"
 
         if verbose:
-            print(f"[+] Exporting to osinttracker format...")
+            print(f"[+] Exporting to osintracker format...")
 
         try:
             # Create exporter instance and export
-            exporter = OsintTrackerExporter(database, verbose, alias)
+            exporter = OsintrackerExporter(database, verbose, alias)
             exporter.export_to_json(output_file)
 
             if verbose:
-                print(f"[+] osinttracker export completed successfully!")
+                print(f"[+] osintracker export completed successfully!")
 
         except FileNotFoundError as e:
             print(f"[-] Error: {e}", file=sys.stderr)
@@ -455,7 +455,7 @@ def parse(verbose, database, input_file):
 # Define the export command with options for database, report file, and verbose mode
 @click.command(
     name="export",
-    help="Export data from database (HTML report or osinttracker JSON).",
+    help="Export data from database (HTML report or osintracker JSON).",
     context_settings=dict(help_option_names=["-h", "--help"]),
 )
 @click.option(
@@ -486,13 +486,13 @@ def parse(verbose, database, input_file):
     is_flag=False,
     flag_value="shodan",
     type=str,
-    help="Central entity name for osinttracker export (default: shodan).",
+    help="Central entity name for osintracker export (default: shodan).",
 )
 @click.option(
     "--osint-output",
-    default="assets_osinttracker.json",
+    default="assets_osintracker.json",
     type=str,
-    help="Output path for osinttracker JSON file.",
+    help="Output path for osintracker JSON file.",
     show_default=True,
 )
 @click.option("--verbose", "-v", is_flag=True, help="Verbose mode.")
@@ -500,13 +500,13 @@ def export(verbose, database, output, template_file, osint, osint_output):
     """
     Export data from the database.
 
-    Generates both HTML report and osinttracker JSON format.
+    Generates both HTML report and osintracker JSON format.
 
     Examples:
         Default files:                 shodan2db.py export -d database.db
         Custom HTML path:              shodan2db.py export -d database.db -o rapport.html
         Custom entity:                 shodan2db.py export -d database.db --osint "Campaign"
-        Custom osinttracker output:    shodan2db.py export -d database.db --osint-output custom.json
+        Custom osintracker output:    shodan2db.py export -d database.db --osint-output custom.json
     """
     # Always generate HTML report
     if output is None:
@@ -518,8 +518,8 @@ def export(verbose, database, output, template_file, osint, osint_output):
         template_file=template_file,
     )
 
-    # Always generate osinttracker JSON with the specified entity name
-    Shodan2DB.export_osinttracker(
+    # Always generate osintracker JSON with the specified entity name
+    Shodan2DB.export_osintracker(
         verbose=verbose,
         database=database,
         output_file=osint_output,
