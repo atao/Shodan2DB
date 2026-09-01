@@ -7,6 +7,9 @@ import sys
 import click
 from jinja2 import Environment, FileSystemLoader, TemplateError
 
+# Import osinttracker exporter module
+from plugins.export_osinttracker import OsintTrackerExporter
+
 
 class Shodan2DB:
     """
@@ -382,6 +385,34 @@ class Shodan2DB:
             )
             sys.exit(1)
 
+    @staticmethod
+    def export_osinttracker(verbose, database, output_file, alias):
+        """
+        Export Shodan2DB data to osinttracker JSON format.
+        Creates entities (IPs, domains, hostnames) and relationships between them.
+        """
+        # Ensure the database file has the correct extension
+        if not database.endswith(".db"):
+            database = f"{database}.db"
+
+        if verbose:
+            print(f"[+] Exporting to osinttracker format...")
+
+        try:
+            # Create exporter instance and export
+            exporter = OsintTrackerExporter(database, verbose, alias)
+            exporter.export_to_json(output_file)
+
+            if verbose:
+                print(f"[+] osinttracker export completed successfully!")
+
+        except FileNotFoundError as e:
+            print(f"[-] Error: {e}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as e:
+            print(f"[-] Unexpected error: {e}", file=sys.stderr)
+            sys.exit(1)
+
 
 # Define the click group to organize commands
 @click.group()
@@ -424,7 +455,7 @@ def parse(verbose, database, input_file):
 # Define the export command with options for database, report file, and verbose mode
 @click.command(
     name="export",
-    help="Generate an HTML report from the data in the database.",
+    help="Export data from database (HTML report or osinttracker JSON).",
     context_settings=dict(help_option_names=["-h", "--help"]),
 )
 @click.option(
@@ -435,31 +466,64 @@ def parse(verbose, database, input_file):
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
 @click.option(
-    "--report-file",
+    "--output",
     "-o",
-    default="shodan.html",
-    help="Output path for the HTML report file.",
-    show_default=True,
+    default=None,
+    help="Output path for HTML report file.",
     type=click.Path(writable=True, file_okay=True, dir_okay=False),
 )
 @click.option(
     "--template-file",
     "-t",
     default="templates/report.html",
-    help="Path to the Jinja2 template file.",
+    help="Path to the Jinja2 template file (HTML export only).",
     show_default=True,
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
+@click.option(
+    "--osint",
+    default="shodan",
+    is_flag=False,
+    flag_value="shodan",
+    type=str,
+    help="Central entity name for osinttracker export (default: shodan).",
+)
+@click.option(
+    "--osint-output",
+    default="assets_osinttracker.json",
+    type=str,
+    help="Output path for osinttracker JSON file.",
+    show_default=True,
+)
 @click.option("--verbose", "-v", is_flag=True, help="Verbose mode.")
-def export(verbose, database, report_file, template_file):
+def export(verbose, database, output, template_file, osint, osint_output):
     """
-    Generate an HTML report from the data in the database.
+    Export data from the database.
+
+    Generates both HTML report and osinttracker JSON format.
+
+    Examples:
+        Default files:                 shodan2db.py export -d database.db
+        Custom HTML path:              shodan2db.py export -d database.db -o rapport.html
+        Custom entity:                 shodan2db.py export -d database.db --osint "Campaign"
+        Custom osinttracker output:    shodan2db.py export -d database.db --osint-output custom.json
     """
+    # Always generate HTML report
+    if output is None:
+        output = "shodan.html"
     Shodan2DB.export(
         verbose=verbose,
         database=database,
-        exportfile=report_file,
+        exportfile=output,
         template_file=template_file,
+    )
+
+    # Always generate osinttracker JSON with the specified entity name
+    Shodan2DB.export_osinttracker(
+        verbose=verbose,
+        database=database,
+        output_file=osint_output,
+        alias=osint,
     )
 
 

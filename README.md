@@ -4,6 +4,8 @@ This tool generates a report on the attack surface exposed on the internet based
 Shodan exports include vulnerability data and tags (`vuln` and `tag`) that aren’t directly accessible online or through subscriptions such as Small Business, Corporate, or Enterprise.
 This tool unlocks that data, enabling deeper vulnerability analysis and helping teams develop effective remediation plans.
 
+You can display results on [Osintracker](https://app.osintracker.com).
+
 `vuln` and `tag` are available with Membership plan.
 
 You can sometimes find a Shodan lifetime membership on sale for as little as $4 or $5 during special events, such as the platform’s anniversary or Black Friday. The regular price is $49 as a one-time payment, with no annual renewal fee.
@@ -24,6 +26,7 @@ The provided template uses Bulma CSS.
 - **Vulnerability deduplication** based on IP address and CVE pairs.
 - **HTML report generation** with sortable tables and client-side search.
 - **Customizable reports** using a Jinja2 template.
+- **Plugins** Create an Osintracker json file.
 
 ## Requirements
 
@@ -71,14 +74,17 @@ Options:
 ```bash
 Usage: shodan2db.py export [OPTIONS]
 
-  Generate an HTML report from the data in the database.
+  Export data from database (HTML report or osinttracker JSON).
 
 Options:
   -d, --database FILE       Path to the SQLite database file.  [required]
-  -o, --report-file FILE    Output path for the HTML report file.  [default:
-                            shodan.html]
-  -t, --template-file FILE  Path to the Jinja2 template file.  [default:
-                            templates/report.html]
+  -o, --output FILE         Output path for HTML report file.
+  -t, --template-file FILE  Path to the Jinja2 template file (HTML export
+                            only).  [default: templates/report.html]
+  --osint TEXT              Central entity name for osinttracker export
+                            (default: shodan).
+  --osint-output TEXT       Output path for osinttracker JSON file.  [default:
+                            assets_osinttracker.json]
   -v, --verbose             Verbose mode.
   -h, --help                Show this message and exit.
 ```
@@ -105,7 +111,11 @@ python shodan2db.py parse -i ./example_shodan.json -d ./example_database.db -v
 
 # Step 2: Extract analytics and output your HTML dashboard
 python shodan2db.py export -d ./example_database.db -o ./example_report.html -v
+
+# Optionnal - Extract analytics and output your HTML dashboard + json for Osintracker import
+python shodan2db.py export -d ./example_database.db -o ./example_report.html --osint example --osint-output example_osintracker -v
 ```
+
 
 5. See report file :
 
@@ -116,6 +126,10 @@ python shodan2db.py export -d ./example_database.db -o ./example_report.html -v
 - Host details
 
   <img src="img/report2.png">
+
+- [Osintracker](https://app.osintracker.com) export
+
+  <img src="img/osintracker.png">
 
 **Tags** and **vulns** are visible directly in the **Summary** table.
 
