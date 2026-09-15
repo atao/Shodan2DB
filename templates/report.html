@@ -66,6 +66,13 @@
         .is-size-7 {
             line-height: 1.4;
         }
+        .hostname-separator {
+            color: #38ef7d;
+            font-size: 1.35em;
+            font-weight: 700;
+            margin: 0 0.45rem;
+            vertical-align: -0.08em;
+        }
         .table thead th {
             background-color: #f8fafc !important;
             color: #334155 !important;
@@ -84,9 +91,205 @@
             opacity: 0.65;
             transform: translateY(-50%);
         }
+        .theme-toggle {
+            border: 1px solid #dbe3ec;
+        }
+        @media (prefers-color-scheme: dark) {
+            body:not(.light-mode) {
+                background-color: #111827 !important;
+                color: #e5e7eb;
+            }
+            body:not(.light-mode) .navbar.is-light {
+                --bulma-navbar-background-color: #1f2937;
+                --bulma-navbar-item-hover-background-color: #374151;
+                --bulma-navbar-item-hover-color: #ffffff;
+                --bulma-navbar-item-active-background-color: #374151;
+                --bulma-navbar-item-active-color: #ffffff;
+            }
+            body:not(.light-mode) .navbar,
+            body:not(.light-mode) .navbar-menu,
+            body:not(.light-mode) .box {
+                background-color: #1f2937 !important;
+                border-color: #374151 !important;
+                color: #e5e7eb;
+            }
+            body:not(.light-mode) .navbar-item,
+            body:not(.light-mode) .navbar-link,
+            body:not(.light-mode) .title,
+            body:not(.light-mode) .subtitle,
+            body:not(.light-mode) .heading,
+            body:not(.light-mode) .label {
+                color: #e5e7eb !important;
+            }
+            body:not(.light-mode) .navbar.is-light .navbar-item:hover,
+            body:not(.light-mode) .navbar.is-light .navbar-item:focus,
+            body:not(.light-mode) .navbar.is-light .navbar-item:focus-within,
+            body:not(.light-mode) .navbar.is-light .navbar-link:hover,
+            body:not(.light-mode) .navbar.is-light .navbar-link:focus,
+            body:not(.light-mode) .navbar.is-light .navbar-link:focus-within,
+            body:not(.light-mode) .navbar.is-light .navbar-burger:hover,
+            body:not(.light-mode) .navbar.is-light .navbar-burger:focus,
+            body:not(.light-mode) .navbar.is-light .button.is-light:hover,
+            body:not(.light-mode) .navbar.is-light .button.is-light:focus,
+            body:not(.light-mode) .navbar.is-light .button.is-light:active {
+                background-color: #374151 !important;
+                color: #ffffff !important;
+            }
+            body:not(.light-mode) .input {
+                background-color: #111827;
+                border-color: #4b5563;
+                color: #f9fafb;
+            }
+            body:not(.light-mode) .input::placeholder {
+                color: #9ca3af;
+            }
+            body:not(.light-mode) .table {
+                background-color: #1f2937;
+                color: #e5e7eb;
+            }
+            body:not(.light-mode) .table td,
+            body:not(.light-mode) .table th {
+                border-color: #374151;
+                color: #e5e7eb;
+            }
+            body:not(.light-mode) .table thead th {
+                background-color: #111827 !important;
+                color: #f9fafb !important;
+            }
+            body:not(.light-mode) .table.is-striped tbody tr:not(.is-selected):nth-child(even) {
+                background-color: #243244;
+            }
+            body:not(.light-mode) .table.is-hoverable tbody tr:not(.is-selected):hover,
+            body:not(.light-mode) .table.is-hoverable tbody tr:not(.is-selected):hover td {
+                background-color: #374151 !important;
+                color: #ffffff !important;
+            }
+            body:not(.light-mode) .table strong {
+                color: #ffffff !important;
+            }
+            body:not(.light-mode) .level .title.has-text-info {
+                color: #60a5fa !important;
+            }
+            body:not(.light-mode) .level .title.has-text-danger {
+                color: #fb7185 !important;
+            }
+            body:not(.light-mode) .level .title.has-text-warning {
+                color: #fbbf24 !important;
+            }
+            body:not(.light-mode) .level .title.has-text-primary {
+                color: #2dd4bf !important;
+            }
+            body:not(.light-mode) .theme-toggle {
+                background-color: #374151 !important;
+                border-color: #4b5563;
+                color: #f9fafb;
+            }
+        }
+        body.dark-mode {
+            background-color: #111827 !important;
+            color: #e5e7eb;
+        }
+        body.dark-mode .navbar.is-light {
+            --bulma-navbar-background-color: #1f2937;
+            --bulma-navbar-item-hover-background-color: #374151;
+            --bulma-navbar-item-hover-color: #ffffff;
+            --bulma-navbar-item-active-background-color: #374151;
+            --bulma-navbar-item-active-color: #ffffff;
+        }
+        body.dark-mode .navbar,
+        body.dark-mode .navbar-menu,
+        body.dark-mode .box {
+            background-color: #1f2937 !important;
+            border-color: #374151 !important;
+            color: #e5e7eb;
+        }
+        body.dark-mode .navbar-item,
+        body.dark-mode .navbar-link,
+        body.dark-mode .title,
+        body.dark-mode .subtitle,
+        body.dark-mode .heading,
+        body.dark-mode .label {
+            color: #e5e7eb !important;
+        }
+        body.dark-mode .navbar.is-light .navbar-item:hover,
+        body.dark-mode .navbar.is-light .navbar-item:focus,
+        body.dark-mode .navbar.is-light .navbar-item:focus-within,
+        body.dark-mode .navbar.is-light .navbar-link:hover,
+        body.dark-mode .navbar.is-light .navbar-link:focus,
+        body.dark-mode .navbar.is-light .navbar-link:focus-within,
+        body.dark-mode .navbar.is-light .navbar-burger:hover,
+        body.dark-mode .navbar.is-light .navbar-burger:focus,
+        body.dark-mode .navbar.is-light .button.is-light:hover,
+        body.dark-mode .navbar.is-light .button.is-light:focus,
+        body.dark-mode .navbar.is-light .button.is-light:active {
+            background-color: #374151 !important;
+            color: #ffffff !important;
+        }
+        body.dark-mode .input {
+            background-color: #111827;
+            border-color: #4b5563;
+            color: #f9fafb;
+        }
+        body.dark-mode .input::placeholder {
+            color: #9ca3af;
+        }
+        body.dark-mode .table {
+            background-color: #1f2937;
+            color: #e5e7eb;
+        }
+        body.dark-mode .table td,
+        body.dark-mode .table th {
+            border-color: #374151;
+            color: #e5e7eb;
+        }
+        body.dark-mode .table thead th {
+            background-color: #111827 !important;
+            color: #f9fafb !important;
+        }
+        body.dark-mode .table.is-striped tbody tr:not(.is-selected):nth-child(even) {
+            background-color: #243244;
+        }
+        body.dark-mode .table.is-hoverable tbody tr:not(.is-selected):hover,
+        body.dark-mode .table.is-hoverable tbody tr:not(.is-selected):hover td {
+            background-color: #374151 !important;
+            color: #ffffff !important;
+        }
+        body.dark-mode .table strong {
+            color: #ffffff !important;
+        }
+        body.dark-mode .level .title.has-text-info {
+            color: #60a5fa !important;
+        }
+        body.dark-mode .level .title.has-text-danger {
+            color: #fb7185 !important;
+        }
+        body.dark-mode .level .title.has-text-warning {
+            color: #fbbf24 !important;
+        }
+        body.dark-mode .level .title.has-text-primary {
+            color: #2dd4bf !important;
+        }
+        body.dark-mode .theme-toggle {
+            background-color: #374151 !important;
+            border-color: #4b5563;
+            color: #f9fafb;
+        }
+        body:not(.light-mode) .navbar.is-light .theme-toggle:hover,
+        body:not(.light-mode) .navbar.is-light .theme-toggle:focus,
+        body:not(.light-mode) .navbar.is-light .theme-toggle:active,
+        body.dark-mode .navbar.is-light .theme-toggle:hover,
+        body.dark-mode .navbar.is-light .theme-toggle:focus,
+        body.dark-mode .navbar.is-light .theme-toggle:active {
+            background-color: #4b5563 !important;
+            border-color: #6b7280 !important;
+            color: #ffffff !important;
+        }
+        body.light-mode {
+            color-scheme: light;
+        }
     </style>
 </head>
-<body class="has-navbar-fixed-top">
+<body id="top" class="has-navbar-fixed-top">
     <!-- Top Fixed Navigation Bar -->
     <nav class="navbar is-fixed-top is-light shadow">
         <div class="container">
@@ -114,6 +317,11 @@
                                 <i class="bi bi-search"></i>
                             </span>
                         </p>
+                    </div>
+                    <div class="navbar-item">
+                        <button class="button is-light theme-toggle" type="button" id="theme-toggle" aria-label="Inverser le mode clair et sombre" title="Inverser le mode clair et sombre">
+                            <span class="icon"><i class="bi bi-circle-half" aria-hidden="true"></i></span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -218,7 +426,15 @@
                             {{ host.nbvulns or 0 }} Vulns
                         </span>
                     </p>
-                    <p class="subtitle is-6 mt-1">{{ host.hostnames or 'No associated hostname' }}</p>
+                    <p class="subtitle is-6 mt-1">
+                        {% if host.hostnames %}
+                            {% for hostname in host.hostnames.split() %}
+                                {% if not loop.first %}<span class="hostname-separator" aria-hidden="true">&bull;</span>{% endif %}{{ hostname }}
+                            {% endfor %}
+                        {% else %}
+                            No associated hostname
+                        {% endif %}
+                    </p>
                     <div class="content pt-2" style="color: #ffffff !important;">
                         <p>
                             <strong>ISP :</strong> {{ host.isp or 'Unknown ISP' }} 
@@ -256,17 +472,17 @@
                                     <td><strong>{{ service.product or 'Generic Port Probe' }}</strong></td>
                                     <td>{{ service.version or 'Undetermined' }}</td>
                                     <td>
-                                        <a class="has-text-link" href="https://shodan.io{{ host.ip }}#{{ service.port }}" target="_blank" rel="noopener">
+                                        <a class="has-text-link" href="https://www.shodan.io/host/{{ host.ip }}#{{ service.port }}" target="_blank" rel="noopener">
                                             <span class="tag is-light is-info">{{ service.port }}</span>
                                         </a>
                                     </td>
                                     <td><span class="is-uppercase">{{ service.transport }}</span></td>
-                                    <td>{{ service.data.splitlines() | first or 'No data available' }}</td>
+                                    <td>{{ (service.data or '').splitlines() | first or 'No data available' }}</td>
                                 </tr>
                             {% endif %}
                         {% endfor %}
                         {% if not ns_services.has_services %}
-                            <tr><td colspan="4" class="has-text-centered has-text-grey-italic">No open services maps recorded inside database.</td></tr>
+                            <tr><td colspan="5" class="has-text-centered has-text-grey-italic">No open services maps recorded inside database.</td></tr>
                         {% endif %}
                         </tbody>
                     </table>
@@ -299,7 +515,7 @@
                                             {{ vuln.cvss or 'N/A' }}
                                         </span>
                                     </td>
-                                    <td><p class="is-size-7">{{ vuln.summary or 'No public descriptions details synchronized.' }}</p></td>
+                                    <td><p>{{ vuln.summary or 'No public descriptions details synchronized.' }}</p></td>
                                 </tr>
                             {% endif %}
                         {% endfor %}
@@ -339,7 +555,7 @@
                                 {{ cve.cvss or 'N/A' }}
                             </span>
                         </td>
-                        <td><p class="is-size-7">{{ cve.summary }}</p></td>
+                        <td><p>{{ cve.summary }}</p></td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -398,7 +614,15 @@
                         </button>
                         <span class="tag is-success is-light is-rounded is-medium is-pulled-right has-text-weight-bold">No Vulns</span>
                     </p>
-                    <p class="subtitle is-6 mt-1">{{ host.hostnames or 'No associated hostname' }}</p>
+                    <p class="subtitle is-6 mt-1">
+                        {% if host.hostnames %}
+                            {% for hostname in host.hostnames.split() %}
+                                {% if not loop.first %}<span class="hostname-separator" aria-hidden="true">&bull;</span>{% endif %}{{ hostname }}
+                            {% endfor %}
+                        {% else %}
+                            No associated hostname
+                        {% endif %}
+                    </p>
                     <div class="content pt-2" style="color: #ffffff !important;">
                         <p>
                             <strong>ISP :</strong> {{ host.isp or 'Unknown ISP' }}
@@ -452,6 +676,40 @@
 
     <!-- Interactive Client-Side Features -->
     <script>
+        (() => {
+            const savedTheme = window.localStorage.getItem('shodan2db-theme');
+            if (savedTheme === 'dark') document.body.classList.add('dark-mode');
+            if (savedTheme === 'light') document.body.classList.add('light-mode');
+        })();
+
+        function toggleTheme() {
+            const body = document.body;
+            const isDark = body.classList.contains('dark-mode');
+            body.classList.toggle('dark-mode', !isDark);
+            body.classList.toggle('light-mode', isDark);
+            window.localStorage.setItem('shodan2db-theme', isDark ? 'light' : 'dark');
+            updateThemeButton(!isDark);
+        }
+
+        function updateThemeButton(isDark) {
+            const button = document.getElementById('theme-toggle');
+            if (!button) return;
+            const icon = button.querySelector('i');
+            button.classList.toggle('is-dark', isDark);
+            button.classList.toggle('is-light', !isDark);
+            button.setAttribute('aria-pressed', String(isDark));
+            button.title = isDark ? 'Activer le mode clair' : 'Activer le mode sombre';
+            if (icon) icon.className = isDark ? 'bi bi-sun' : 'bi bi-moon-stars';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = window.localStorage.getItem('shodan2db-theme');
+            const isDark = savedTheme === 'dark' ||
+                (savedTheme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            updateThemeButton(isDark);
+            document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
+        });
+
         function copyIp(button) {
             const ip = button.dataset.ip;
             const icon = button.querySelector('i');

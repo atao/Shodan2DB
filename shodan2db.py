@@ -5,7 +5,7 @@ import sqlite3
 import sys
 
 import click
-from jinja2 import Environment, FileSystemLoader, TemplateError
+from jinja2 import Environment, FileSystemLoader, TemplateError, select_autoescape
 
 # Import osintracker exporter module
 from plugins.export_osintracker import OsintrackerExporter
@@ -183,7 +183,7 @@ class Shodan2DB:
                         data = jsonobject.get("data")
 
                         # Safe extraction of nested location attributes to avoid KeyError
-                        location = jsonobject.get("location", {})
+                        location = jsonobject.get("location") or {}
                         city = location.get("city")
                         region_code = location.get("region_code")
                         area_code = location.get("area_code")
@@ -196,32 +196,39 @@ class Shodan2DB:
 
                         # Execute service records batch insertion
                         try:
+                            service_values = (
+                                ip_str,
+                                asn,
+                                domains,
+                                hostnames,
+                                org,
+                                timestamp,
+                                isp,
+                                operating_system,
+                                product,
+                                version,
+                                transport,
+                                port,
+                                data,
+                                city,
+                                region_code,
+                                area_code,
+                                country_code,
+                                country_name,
+                                nbvulns,
+                                tags,
+                            )
                             cursor.execute(
-                                "INSERT OR IGNORE INTO services (ip, asn, domains, hostnames, org, timestamp, isp, os, "
+                                "INSERT INTO services (ip, asn, domains, hostnames, org, timestamp, isp, os, "
                                 "product, version, transport, port, data, city, region_code, area_code, country_code, "
-                                "country_name, nbvulns, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                (
-                                    ip_str,
-                                    asn,
-                                    domains,
-                                    hostnames,
-                                    org,
-                                    timestamp,
-                                    isp,
-                                    operating_system,
-                                    product,
-                                    version,
-                                    transport,
-                                    port,
-                                    data,
-                                    city,
-                                    region_code,
-                                    area_code,
-                                    country_code,
-                                    country_name,
-                                    nbvulns,
-                                    tags,
-                                ),
+                                "country_name, nbvulns, tags) "
+                                "SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? "
+                                "WHERE NOT EXISTS (SELECT 1 FROM services WHERE "
+                                "ip IS ? AND asn IS ? AND domains IS ? AND hostnames IS ? AND org IS ? "
+                                "AND timestamp IS ? AND isp IS ? AND os IS ? AND product IS ? AND version IS ? "
+                                "AND transport IS ? AND port IS ? AND data IS ? AND city IS ? AND region_code IS ? "
+                                "AND area_code IS ? AND country_code IS ? AND country_name IS ? AND nbvulns IS ? AND tags IS ?)",
+                                service_values + service_values,
                             )
                         except sqlite3.Error as e:
                             print(f"[!] Database error on service line {line_idx}: {e}")
@@ -291,19 +298,27 @@ class Shodan2DB:
 
                 # Fetch distinct vulnerable hosts sorted by total vulnerability count
                 cursor.execute("""
-                    SELECT DISTINCT ip, hostnames, isp, city, tags, nbvulns FROM summary
-                    WHERE nbvulns > 0 ORDER BY nbvulns DESC
+                    SELECT ip, MAX(hostnames) AS hostnames, MAX(isp) AS isp,
+                           MAX(city) AS city, MAX(tags) AS tags, MAX(nbvulns) AS nbvulns
+                    FROM summary
+                    GROUP BY ip
+                          HAVING MAX(COALESCE(nbvulns, 0)) > 0
+                    ORDER BY nbvulns DESC
                 """)
                 vulns_hosts_list = cursor.fetchall()
 
                 # Keep hosts without reported vulnerabilities for the final inventory table.
                 cursor.execute("""
-                    SELECT DISTINCT ip, hostnames, isp, city, tags FROM summary
-                    WHERE nbvulns IS NULL OR nbvulns = 0 ORDER BY ip
+                    SELECT ip, MAX(hostnames) AS hostnames, MAX(isp) AS isp,
+                           MAX(city) AS city, MAX(tags) AS tags
+                    FROM summary
+                    GROUP BY ip
+                          HAVING MAX(COALESCE(nbvulns, 0)) = 0
+                    ORDER BY ip
                 """)
                 all_hosts_list = cursor.fetchall()
 
-                cursor.execute("SELECT COUNT(*) AS total FROM summary")
+                cursor.execute("SELECT COUNT(DISTINCT ip) AS total FROM summary")
                 total_hosts = cursor.fetchone()["total"]
 
                 # Fetch individual vulnerabilities ordered by IP and severity level
@@ -330,8 +345,10 @@ class Shodan2DB:
 
                 # Fetch consolidated statistics for recurring CVEs across infrastructure
                 cursor.execute("""
-                    SELECT cveid, count(*) as count, cvss, summary FROM vulnerabilities 
-                    GROUP BY cveid ORDER BY count DESC, cvss DESC
+                          SELECT cveid, count(*) AS count, MAX(cvss) AS cvss,
+                              MAX(summary) AS summary
+                          FROM vulnerabilities
+                          GROUP BY cveid ORDER BY count DESC, cvss DESC
                 """)
                 cves_list = cursor.fetchall()
 
@@ -350,7 +367,10 @@ class Shodan2DB:
 
         try:
             # Initialize Jinja2 environment with targeted storage directories
-            environment = Environment(loader=FileSystemLoader(template_dir))
+            environment = Environment(
+                loader=FileSystemLoader(template_dir),
+                autoescape=select_autoescape(["html", "xml"]),
+            )
             template = environment.get_template(template_name)
 
             # Map dataset lists directly onto targeted template fields
