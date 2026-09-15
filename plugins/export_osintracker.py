@@ -67,7 +67,7 @@ class OsintrackerExporter:
 
     def _get_vulnerabilities(
         self, conn: sqlite3.Connection, ip: str
-    ) -> Tuple[int, List[str]]:
+    ) -> Tuple[int, List[str], float]:
         """Fetch vulnerabilities for a given IP address."""
         cursor = conn.cursor()
         cursor.execute(
@@ -84,7 +84,7 @@ class OsintrackerExporter:
             cve_list.append(row[0])
             if row[1] is not None and row[1] > max_cvss:
                 max_cvss = row[1]
-        return len(cve_list), cve_list
+        return len(cve_list), cve_list, max_cvss
 
     def _parse_list_field(self, field_value: Optional[str]) -> List[str]:
         """Convert space-separated string to list, handling None values."""
@@ -119,25 +119,10 @@ class OsintrackerExporter:
         service_data: Dict[str, Any],
         vuln_count: int,
         cve_ids: List[str],
+        max_cvss: float = 0.0,
     ) -> Dict[str, Any]:
         """Create an osintracker entity."""
         entity_id = self._get_entity_id(entity_type, value)
-
-        # Determine max CVSS for color coding
-        max_cvss = 0.0
-        if cve_ids:
-            conn = sqlite3.connect(self.database)
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT MAX(cvss) FROM vulnerabilities WHERE cveid IN ("
-                + ",".join("?" * len(cve_ids))
-                + ")",
-                cve_ids,
-            )
-            result = cursor.fetchone()
-            if result[0] is not None:
-                max_cvss = result[0]
-            conn.close()
 
         # Build comments
         comments_parts = []
@@ -201,6 +186,8 @@ class OsintrackerExporter:
         if not output_file.endswith(".json"):
             output_file = f"{output_file}.json"
 
+        self.entity_ids.clear()
+        self.relationships.clear()
         self._log(f"Exporting to osintracker format: {output_file}...")
 
         try:
@@ -218,11 +205,12 @@ class OsintrackerExporter:
 
                 # Create alias/campaign entity if provided
                 if self.alias:
-                    alias_entity = self._create_entity("alias", self.alias, {}, 0, [])
+                    alias = self.alias
+                    alias_entity = self._create_entity("alias", alias, {}, 0, [])
                     entities.append(alias_entity)
-                    entity_set.add(("alias", self.alias))
-                    alias_id = self._get_entity_id("alias", self.alias)
-                    self._log(f"Created alias entity: {self.alias}")
+                    entity_set.add(("alias", alias))
+                    alias_id = self._get_entity_id("alias", alias)
+                    self._log(f"Created alias entity: {alias}")
 
                 self._log(f"Processing {len(services)} services...")
 
@@ -230,11 +218,13 @@ class OsintrackerExporter:
                 for service in services:
                     service_dict = dict(service)
                     ip = service_dict.get("ip")
+                    if not ip:
+                        continue
                     hostnames = self._parse_list_field(service_dict.get("hostnames"))
                     domains = self._parse_list_field(service_dict.get("domains"))
 
                     # Get vulnerabilities for this IP
-                    vuln_count, cve_ids = self._get_vulnerabilities(conn, ip)
+                    vuln_count, cve_ids, max_cvss = self._get_vulnerabilities(conn, ip)
 
                     # Create IP entity
                     if ip:
@@ -242,14 +232,14 @@ class OsintrackerExporter:
                         if entity_key not in entity_set:
                             entity_set.add(entity_key)
                             entity = self._create_entity(
-                                "ip", ip, service_dict, vuln_count, cve_ids
+                                "ip", ip, service_dict, vuln_count, cve_ids, max_cvss
                             )
                             entities.append(entity)
 
                             # Create relationship to alias if provided
                             if alias_id:
                                 self._add_relationship(
-                                    "alias", self.alias, "ip", ip, "contains"
+                                    "alias", alias, "ip", ip, "contains"
                                 )
 
                     # Create hostname entities and relationships
@@ -264,6 +254,7 @@ class OsintrackerExporter:
                                     service_dict,
                                     vuln_count,
                                     cve_ids,
+                                    max_cvss,
                                 )
                                 entities.append(entity)
 
@@ -280,7 +271,12 @@ class OsintrackerExporter:
                             if entity_key not in entity_set:
                                 entity_set.add(entity_key)
                                 entity = self._create_entity(
-                                    "domain", domain, service_dict, vuln_count, cve_ids
+                                    "domain",
+                                    domain,
+                                    service_dict,
+                                    vuln_count,
+                                    cve_ids,
+                                    max_cvss,
                                 )
                                 entities.append(entity)
 
