@@ -55,3 +55,20 @@ def test_version():
     result = invoke("--version")
     assert result.exit_code == 0
     assert "version" in result.output
+
+
+def test_builtin_template_by_name(tmp_path, populated_db):
+    result = invoke(
+        "export",
+        "-d",
+        populated_db,
+        "-f",
+        "html",
+        "-t",
+        "modern",
+        "-o",
+        tmp_path / "m.html",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Findings by severity" in (tmp_path / "m.html").read_text()

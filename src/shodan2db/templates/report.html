@@ -1,4 +1,4 @@
-{# templates/report.html #}
+{# Shodan2DB "classic" report (Bulma, loads Bulma CSS and Bootstrap Icons from a CDN). #}
 <!doctype html>
 <html lang="en">
 <head>
@@ -285,35 +285,142 @@
         body.light-mode {
             color-scheme: light;
         }
+
+        /* --- Severity colours (CVSS v3 ratings) --- */
+        .tag.sev-critical { background-color: #9f1239 !important; color: #fff !important; }
+        .tag.sev-high { background-color: #ea580c !important; color: #fff !important; }
+        .tag.sev-medium { background-color: #facc15 !important; color: #1f2937 !important; }
+        .tag.sev-low { background-color: #3b82f6 !important; color: #fff !important; }
+        .tag.sev-unknown { background-color: #9ca3af !important; color: #fff !important; }
+        .tag.sev-none { background-color: #22c55e !important; color: #fff !important; }
+        .bg-sev-critical { background-color: #9f1239; }
+        .bg-sev-high { background-color: #ea580c; }
+        .bg-sev-medium { background-color: #facc15; }
+        .bg-sev-low { background-color: #3b82f6; }
+        .bg-sev-unknown { background-color: #9ca3af; }
+        .border-sev-critical { border-left: 6px solid #9f1239 !important; }
+        .border-sev-high { border-left: 6px solid #ea580c !important; }
+        .border-sev-medium { border-left: 6px solid #facc15 !important; }
+        .border-sev-low { border-left: 6px solid #3b82f6 !important; }
+        .border-sev-unknown { border-left: 6px solid #9ca3af !important; }
+        .cvss-tag { min-width: 3.2em; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+        /* --- Overview --- */
+        .kpi .title { font-variant-numeric: tabular-nums; }
+        .kpi-critical { color: #9f1239 !important; }
+        .kpi-high { color: #ea580c !important; }
+        .severity-bar {
+            display: flex; height: 0.75rem; border-radius: 999px; overflow: hidden;
+            background: #e5e7eb; margin: 0.25rem 0 0.75rem;
+        }
+        .severity-bar span { display: block; height: 100%; }
+        .severity-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; font-size: 0.9rem; }
+        .severity-legend .dot {
+            display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 3px;
+            margin-right: 0.4rem; vertical-align: -0.05em;
+        }
+        .report-meta { color: #64748b; margin-top: -0.75rem; }
+
+        /* --- Host details --- */
+        .host-banner .host-meta { color: #cbd5e1; }
+        .host-banner .tags .tag { margin-bottom: 0; }
+        .host-section { padding: 1.75rem 1.75rem 1.5rem !important; }
+        .section-title { display: flex; align-items: baseline; gap: 0.75rem; }
+        .section-title .tag { vertical-align: middle; }
+        .port-tags .tag { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+        .summary-cell { font-size: 0.875rem; line-height: 1.45; max-width: 70ch; }
+        .banner-line {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.8rem; overflow-wrap: anywhere;
+        }
+        .verified-flag { font-size: 0.7rem; font-weight: 700; color: #9f1239; text-transform: uppercase; letter-spacing: 0.04em; }
+        .service-line { white-space: nowrap; font-size: 0.85rem; }
+        .isp-cell { min-width: 14rem; }
+        .service-line + .service-line { margin-top: 0.15rem; }
+        .muted { color: #94a3b8; }
+
+        /* --- Misc --- */
+        .is-hidden-by-search { display: none !important; }
+        #no-match { display: none; }
+        #back-to-top {
+            position: fixed; right: 1.5rem; bottom: 1.5rem; z-index: 30;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s;
+        }
+        #back-to-top.is-visible { opacity: 1; pointer-events: auto; }
+        footer.report-footer { padding: 2rem 0 3rem; text-align: center; color: #64748b; font-size: 0.85rem; }
+
+        /* Light Bulma tags and links stay readable on dark backgrounds */
+        body.dark-mode .tag.is-light { background-color: #374151 !important; color: #e5e7eb !important; }
+        body.dark-mode .tag.is-info.is-light { background-color: #1e3a5f !important; color: #bfdbfe !important; }
+        body.dark-mode .tag.is-danger.is-light { background-color: #4c1d24 !important; color: #fecdd3 !important; }
+        body.dark-mode .tag.is-success.is-light { background-color: #14532d !important; color: #bbf7d0 !important; }
+        body.dark-mode .tag.is-primary.is-light { background-color: #134e4a !important; color: #99f6e4 !important; }
+        body.dark-mode .has-text-link { color: #93b4ff !important; }
+        body.dark-mode a.has-text-danger { color: #fb7185 !important; }
+        body.dark-mode .severity-bar { background: #374151; }
+        body.dark-mode .report-meta, body.dark-mode footer.report-footer { color: #9ca3af; }
+        body.dark-mode .kpi-critical { color: #fb7185 !important; }
+        body.dark-mode .kpi-high { color: #fb923c !important; }
+        body.dark-mode .verified-flag { color: #fb7185; }
+        @media (prefers-color-scheme: dark) {
+            body:not(.light-mode) .tag.is-light { background-color: #374151 !important; color: #e5e7eb !important; }
+            body:not(.light-mode) .tag.is-info.is-light { background-color: #1e3a5f !important; color: #bfdbfe !important; }
+            body:not(.light-mode) .tag.is-danger.is-light { background-color: #4c1d24 !important; color: #fecdd3 !important; }
+            body:not(.light-mode) .tag.is-success.is-light { background-color: #14532d !important; color: #bbf7d0 !important; }
+            body:not(.light-mode) .tag.is-primary.is-light { background-color: #134e4a !important; color: #99f6e4 !important; }
+            body:not(.light-mode) .has-text-link { color: #93b4ff !important; }
+            body:not(.light-mode) a.has-text-danger { color: #fb7185 !important; }
+            body:not(.light-mode) .severity-bar { background: #374151; }
+            body:not(.light-mode) .report-meta, body:not(.light-mode) footer.report-footer { color: #9ca3af; }
+            body:not(.light-mode) .kpi-critical { color: #fb7185 !important; }
+            body:not(.light-mode) .kpi-high { color: #fb923c !important; }
+            body:not(.light-mode) .verified-flag { color: #fb7185; }
+        }
+        @media print {
+            .navbar, #back-to-top, .copy-ip, #cve-more { display: none !important; }
+            body { padding-top: 0 !important; }
+            .box { box-shadow: none !important; break-inside: avoid; }
+        }
     </style>
 </head>
+{%- set severity_labels = {
+    "critical": "Critical", "high": "High", "medium": "Medium",
+    "low": "Low", "unknown": "Unscored", "none": "No CVE"
+} -%}
+{%- macro cvss_tag(cvss, sev) -%}
+<span class="tag cvss-tag sev-{{ sev }}" title="{{ severity_labels[sev] }}">{{ "%.1f"|format(cvss) if cvss is not none else "N/A" }}</span>
+{%- endmacro -%}
+{%- macro tag_list(words, classes="is-info is-light") -%}
+{%- if words -%}
+<div class="tags">{% for word in words.split() %}<span class="tag {{ classes }}">{{ word }}</span>{% endfor %}</div>
+{%- else -%}<span class="muted">—</span>{%- endif -%}
+{%- endmacro -%}
+{%- macro search_text(host) -%}
+{{ ([host.ip, host.hostnames, host.isp, host.org, host.city, host.tags] | select | join(" ")
+    ~ " " ~ host.products | join(" ") ~ " " ~ host.ports | join(" ")
+    ~ " " ~ host.cves | map(attribute="cveid") | join(" ")) | lower }}
+{%- endmacro -%}
 <body id="top" class="has-navbar-fixed-top">
     <!-- Top Fixed Navigation Bar -->
     <nav class="navbar is-fixed-top is-light shadow">
         <div class="container">
             <div class="navbar-brand">
-                <a class="navbar-item has-text-weight-semibold" href="#top">
-                    Shodan2DB
-                </a>
+                <a class="navbar-item has-text-weight-semibold" href="#top">Shodan2DB</a>
                 <button class="navbar-burger burger" type="button" data-target="navMenu" aria-label="Ouvrir le menu" aria-expanded="false">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                    <span></span><span></span><span></span>
                 </button>
             </div>
             <div id="navMenu" class="navbar-menu">
                 <div class="navbar-start">
-                    <a class="navbar-item" href="#vulns-list">Vulnerabilities</a>
-                    <a class="navbar-item" href="#cve-list">CVE</a>
-                    <a class="navbar-item" href="#all-list">All</a>
+                    <a class="navbar-item" href="#vulns-list">Vulnerable hosts</a>
+                    <a class="navbar-item" href="#all-list">Other hosts</a>
+                    <a class="navbar-item" href="#cve-list">CVEs</a>
                 </div>
                 <div class="navbar-end">
                     <div class="navbar-item">
                         <p class="control has-icons-left">
-                            <input class="input is-rounded" type="search" placeholder="Filter IP Address" id="searchbox" oninput="liveSearch()" onclick="this.value = ''; liveSearch();" autofocus>
-                            <span class="icon is-medium is-left">
-                                <i class="bi bi-search"></i>
-                            </span>
+                            <input class="input is-rounded" type="search" placeholder="Filter: IP, hostname, product, CVE…" id="searchbox" aria-label="Filter hosts">
+                            <span class="icon is-medium is-left"><i class="bi bi-search"></i></span>
                         </p>
                     </div>
                     <div class="navbar-item">
@@ -326,361 +433,274 @@
         </div>
     </nav>
 
-    <!-- Main Container Target Layout -->
     <div class="container is-fluid px-5 mt-5">
-        <div class="has-text-centered title is-1 py-4">
-            Attack Surface Assessment
+        <div class="has-text-centered py-4">
+            <h1 class="title is-1">Attack Surface Assessment</h1>
+            <p class="report-meta">Generated {{ generated_at }} · {{ total_hosts }} hosts · {{ total_services }} services</p>
         </div>
-        <br>
-                <!-- KPI Metrics Dashboards -->
-        <nav class="level box py-4">
+
+        <!-- KPI Metrics -->
+        {%- set findings = severity_counts.values() | sum %}
+        <nav class="level box py-4 kpi">
             <div class="level-item has-text-centered">
-                <div>
-                    <p class="heading">Hosts</p>
-                    <p class="title has-text-info">{{ total_hosts }}</p>
-                </div>
+                <div><p class="heading">Hosts</p><p class="title has-text-info">{{ total_hosts }}</p></div>
             </div>
             <div class="level-item has-text-centered">
-                <div>
-                    <p class="heading">Vulnerable Hosts</p>
-                    <p class="title has-text-danger">{{ vulns_hosts | length }}</p>
-                </div>
+                <div><p class="heading">Vulnerable Hosts</p><p class="title has-text-danger">{{ vulns_hosts | length }}</p></div>
             </div>
             <div class="level-item has-text-centered">
-                <div>
-                    <p class="heading">Vulnerabilities</p>
-                    <p class="title has-text-danger">{{ total_vulns }}</p>
-                </div>
+                <div><p class="heading">Critical</p><p class="title kpi-critical">{{ severity_counts.critical }}</p></div>
             </div>
             <div class="level-item has-text-centered">
-                <div>
-                    <p class="heading">Services</p>
-                    <p class="title has-text-warning">{{ total_services }}</p>
-                </div>
+                <div><p class="heading">High</p><p class="title kpi-high">{{ severity_counts.high }}</p></div>
             </div>
             <div class="level-item has-text-centered">
-                <div>
-                    <p class="heading">Unique CVEs</p>
-                    <p class="title has-text-primary">{{ cves | length }}</p>
-                </div>
+                <div><p class="heading">Findings</p><p class="title has-text-warning">{{ total_vulns }}</p></div>
+            </div>
+            <div class="level-item has-text-centered">
+                <div><p class="heading">Unique CVEs</p><p class="title has-text-primary">{{ cves | length }}</p></div>
             </div>
         </nav>
 
-        <!-- Global Hosts Summary Table -->
-        <p id="vulns-list" class="title is-3 is-spaced">Vulnerable Hosts</p>
+        {% if findings %}
+        <div class="box">
+            <p class="heading mb-1">Findings by severity (CVE × host)</p>
+            <div class="severity-bar" role="img" aria-label="Findings by severity">
+                {% for sev, count in severity_counts.items() if count %}
+                    <span class="bg-sev-{{ sev }}" style="width: {{ 100 * count / findings }}%" title="{{ severity_labels[sev] }}: {{ count }}"></span>
+                {% endfor %}
+            </div>
+            <div class="severity-legend">
+                {% for sev, count in severity_counts.items() %}
+                    <span><span class="dot bg-sev-{{ sev }}"></span>{{ severity_labels[sev] }} <strong>{{ count }}</strong></span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Vulnerable hosts summary -->
+        <h2 id="vulns-list" class="title is-3 is-spaced mt-6 section-title">
+            Vulnerable Hosts <span class="tag is-danger is-light is-medium">{{ vulns_hosts | length }}</span>
+        </h2>
+        {% if vulns_hosts %}
         <div class="table-container box">
-            <table class="table sortable-table is-hoverable is-bordered is-striped is-fullwidth">
+            <table class="table sortable-table is-hoverable is-striped is-fullwidth">
                 <thead>
-                    <tr class="is-selected">
+                    <tr>
                         <th>IP Address</th>
                         <th>Hostnames</th>
                         <th>ISP Provider</th>
-                        <th>City Location</th>
+                        <th>City</th>
                         <th>Tags</th>
-                        <th>Vulns Count</th>
+                        <th data-type="number">Max CVSS</th>
+                        <th data-type="number">CVEs</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for host in vulns_hosts %}
-                    <tr>
-                        <td>
-                            <a class="has-text-link has-text-weight-bold" href="#{{ host.ip }}">{{ host.ip }}</a>
-                        </td>
-                        <td>{{ host.hostnames or 'N/A' }}</td>
-                        <td>{{ host.isp or 'N/A' }}</td>
-                        <td>{{ host.city or 'N/A' }}</td>
-                        <td>
-                            {% if host.tags %}
-                                {% for tag in host.tags.split() %}
-                                    <span class="tag is-info is-light">{{ tag }}</span>
-                                {% endfor %}
-                            {% else %}
-                                <span class="has-text-grey-light">None</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <span class="tag {% if host.nbvulns and host.nbvulns > 0 %}is-danger{% else %}is-success{% endif %} has-text-weight-bold">
-                                {{ host.nbvulns or 0 }}
-                            </span>
-                        </td>
+                    <tr data-search="{{ search_text(host) }}">
+                        <td><a class="has-text-link has-text-weight-bold" href="#{{ host.ip }}">{{ host.ip }}</a></td>
+                        <td>{{ tag_list(host.hostnames, "is-light") }}</td>
+                        <td class="isp-cell">{{ host.isp or '—' }}</td>
+                        <td>{{ host.city or '—' }}</td>
+                        <td>{{ tag_list(host.tags) }}</td>
+                        <td data-sort="{{ host.max_cvss if host.max_cvss is not none else -1 }}">{{ cvss_tag(host.max_cvss, host.severity) }}</td>
+                        <td data-sort="{{ host.nbvulns }}"><span class="has-text-weight-semibold">{{ host.nbvulns }}</span></td>
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
+        {% else %}
+        <div class="box has-text-centered has-text-grey">No host with a known vulnerability.</div>
+        {% endif %}
 
-        <!-- Loop over each host to display sub-tables -->
+        <!-- One section per vulnerable host -->
         {% for host in vulns_hosts %}
-            <section class="section box my-5 py-5 border-vulnerability">
+            <section class="section box my-5 host-section border-sev-{{ host.severity }}" data-search="{{ search_text(host) }}">
                 <div id="{{ host.ip }}" class="host-banner mb-4">
-                    <p>
-                        <a href="https://www.shodan.io/host/{{ host.ip }}" target="_blank" rel="noopener" class="title is-4 has-text-white underline">
-                            <i class="bi bi-hdd-network-fill mr-2"></i>{{ host.ip }}
-                        </a>
-                        <button class="button is-small is-ghost has-text-grey-light ml-2 copy-ip" type="button" data-ip="{{ host.ip }}" title="Copier l’adresse IP" aria-label="Copier {{ host.ip }}">
-                            <span class="icon"><i class="bi bi-clipboard"></i></span>
-                        </button>
-                        <span class="tag is-danger is-light is-rounded is-medium is-pulled-right has-text-weight-bold">
-                            {{ host.nbvulns or 0 }} Vulns
-                        </span>
-                    </p>
-                    <p class="subtitle is-6 mt-1">
+                    <div class="is-flex is-justify-content-space-between is-align-items-start is-flex-wrap-wrap" style="gap: 0.75rem">
+                        <p>
+                            <a href="https://www.shodan.io/host/{{ host.ip }}" target="_blank" rel="noopener" class="title is-4 has-text-white underline">
+                                <i class="bi bi-hdd-network-fill mr-2"></i>{{ host.ip }}
+                            </a>
+                            <button class="button is-small is-ghost has-text-grey-light ml-2 copy-ip" type="button" data-ip="{{ host.ip }}" title="Copier l’adresse IP" aria-label="Copier {{ host.ip }}">
+                                <span class="icon"><i class="bi bi-clipboard"></i></span>
+                            </button>
+                        </p>
+                        <div class="tags has-addons mb-0">
+                            <span class="tag is-medium is-dark">{{ host.nbvulns }} CVE{{ "s" if host.nbvulns != 1 }}</span>
+                            <span class="tag is-medium sev-{{ host.severity }}">{{ severity_labels[host.severity] }}{% if host.max_cvss is not none %} · {{ "%.1f"|format(host.max_cvss) }}{% endif %}</span>
+                        </div>
+                    </div>
+                    <p class="subtitle is-6 mt-1 mb-2">
                         {% if host.hostnames %}
-                            {% for hostname in host.hostnames.split() %}
-                                {% if not loop.first %}<span class="hostname-separator" aria-hidden="true">&bull;</span>{% endif %}{{ hostname }}
-                            {% endfor %}
+                            {% for hostname in host.hostnames.split() %}{% if not loop.first %}<span class="hostname-separator" aria-hidden="true">&bull;</span>{% endif %}{{ hostname }}{% endfor %}
                         {% else %}
                             No associated hostname
                         {% endif %}
                     </p>
-                    <div class="content pt-2" style="color: #ffffff !important;">
-                        <p>
-                            <strong>ISP :</strong> {{ host.isp or 'Unknown ISP' }} 
-                            <span class="mx-3">|</span> 
-                            <strong>City :</strong> {{ host.city or 'Unknown City' }}
-                            {% if host.tags %}
-                                <span class="mx-3">|</span> <strong>Tags :</strong>
-                                {% for tag in host.tags.split() %}
-                                    <span class="tag is-small is-warning has-text-dark">{{ tag }}</span>
-                                {% endfor %}
-                            {% endif %}
-                        </p>
-                    </div>
+                    <p class="host-meta">
+                        <strong>ISP :</strong> {{ host.isp or 'Unknown' }}
+                        {% if host.org and host.org != host.isp %}<span class="mx-2">|</span><strong>Org :</strong> {{ host.org }}{% endif %}
+                        <span class="mx-2">|</span><strong>City :</strong> {{ [host.city, host.country] | select | join(", ") or 'Unknown' }}
+                        {% if host.tags %}
+                            <span class="mx-2">|</span><strong>Tags :</strong>
+                            {% for tag in host.tags.split() %}<span class="tag is-small is-warning has-text-dark ml-1">{{ tag }}</span>{% endfor %}
+                        {% endif %}
+                    </p>
                 </div>
 
-                <!-- Exposed Ports & Banners Section -->
-                <p class="subtitle is-5 mt-5"><i class="bi bi-cpu mr-2"></i>Exposed Ports & Services</p>
+                <p class="subtitle is-5 mt-5"><i class="bi bi-cpu mr-2"></i>Exposed Ports &amp; Services</p>
                 <div class="table-container">
                     <table class="table sortable-table is-hoverable is-bordered is-striped is-fullwidth">
                         <thead>
-                            <tr>
-                                <th>Service</th>
-                                <th>Version</th>
-                                <th>Port</th>
-                                <th>Transport</th>
-                                <th>Response</th>
-                            </tr>
+                            <tr><th data-type="number">Port</th><th>Transport</th><th>Service</th><th>Version</th><th>Response</th></tr>
                         </thead>
                         <tbody>
                         {% for service in host.services %}
-                                <tr>
-                                    <td><strong>{{ service.product or 'Generic Port Probe' }}</strong></td>
-                                    <td>{{ service.version or 'Undetermined' }}</td>
-                                    <td>
-                                        <a class="has-text-link" href="https://www.shodan.io/host/{{ host.ip }}#{{ service.port }}" target="_blank" rel="noopener">
-                                            <span class="tag is-light is-info">{{ service.port }}</span>
-                                        </a>
-                                    </td>
-                                    <td><span class="is-uppercase">{{ service.transport }}</span></td>
-                                    <td>{{ (service.data or '').splitlines() | first or 'No data available' }}</td>
-                                </tr>
+                            <tr>
+                                <td data-sort="{{ service.port }}">
+                                    <a href="https://www.shodan.io/host/{{ host.ip }}#{{ service.port }}" target="_blank" rel="noopener"><span class="tag is-light is-info">{{ service.port }}</span></a>
+                                </td>
+                                <td><span class="is-uppercase">{{ service.transport or '—' }}</span></td>
+                                <td><strong>{{ service.product or 'Unidentified' }}</strong></td>
+                                <td>{{ service.version or '—' }}</td>
+                                <td class="banner-line">{{ (service.data or '').strip().splitlines() | first or 'No data available' }}</td>
+                            </tr>
                         {% else %}
-                            <tr><td colspan="5" class="has-text-centered has-text-grey-italic">No open services recorded inside database.</td></tr>
+                            <tr><td colspan="5" class="has-text-centered has-text-grey">No open services recorded.</td></tr>
                         {% endfor %}
                         </tbody>
                     </table>
                 </div>
 
-                <!-- CVEs Details Section -->
                 <p class="subtitle is-5 mt-4"><i class="bi bi-shield-slash-fill mr-2 has-text-danger"></i>Vulnerabilities</p>
                 <div class="table-container">
                     <table class="table sortable-table is-hoverable is-bordered is-fullwidth">
                         <thead>
                             <tr>
-                                <th style="width: 15%">CVE ID</th>
-                                <th style="width: 8%">Port</th>
-                                <th style="width: 10%">CVSS Score</th>
-                                <th>Vulnerability Summary Description</th>
+                                <th style="width: 16%">CVE ID</th>
+                                <th style="width: 9%" data-type="number">CVSS</th>
+                                <th style="width: 12%">Ports</th>
+                                <th>Summary</th>
                             </tr>
                         </thead>
                         <tbody>
-                        {% for vuln in host.vulns %}
-                                <tr>
-                                    <td>
-                                        <a class="has-text-danger has-text-weight-bold" href="https://nvd.nist.gov/vuln/detail/{{ vuln.cveid }}" target="_blank" rel="noopener">
-                                            {{ vuln.cveid }}
-                                        </a>
-                                    </td>
-                                    <td>
-                                        {% if vuln.port %}
-                                            <span class="tag is-light is-info">{{ vuln.port }}</span>
-                                        {% else %}
-                                            <span class="has-text-grey">N/A</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <span class="tag {{ 'is-danger' if vuln.cvss and vuln.cvss >= 7.0 else ('is-warning' if vuln.cvss and vuln.cvss >= 4.0 else 'is-info') }} has-text-weight-bold">
-                                            {{ vuln.cvss or 'N/A' }}
-                                        </span>
-                                    </td>
-                                    <td><p>{{ vuln.summary or 'No public descriptions details synchronized.' }}</p></td>
-                                </tr>
-                        {% else %}
-                            <tr><td colspan="4" class="has-text-centered has-text-grey-italic">No vulnerabilities stored for this host.</td></tr>
+                        {% for cve in host.cves %}
+                            <tr>
+                                <td>
+                                    <a class="has-text-danger has-text-weight-bold" href="https://nvd.nist.gov/vuln/detail/{{ cve.cveid }}" target="_blank" rel="noopener">{{ cve.cveid }}</a>
+                                    {% if cve.verified %}<div class="verified-flag">Verified</div>{% endif %}
+                                </td>
+                                <td data-sort="{{ cve.cvss if cve.cvss is not none else -1 }}">{{ cvss_tag(cve.cvss, cve.severity) }}</td>
+                                <td><div class="tags port-tags">{% for port in cve.ports %}<span class="tag is-light is-info">{{ port }}</span>{% else %}<span class="muted">N/A</span>{% endfor %}</div></td>
+                                <td class="summary-cell">{{ cve.summary or 'No description available.' }}</td>
+                            </tr>
                         {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </section>
         {% endfor %}
-        <!-- Global Threat Distribution Index (CVE) -->
-        <p id="cve-list" class="title is-3 is-spaced mt-6">Global Threat Distribution Index (CVE)</p>
-        <div class="table-container box mb-6">
-            <table class="table sortable-table is-hoverable is-bordered is-striped is-fullwidth">
-                <thead>
-                    <tr class="is-selected">
-                        <th>Identified CVE ID</th>
-                        <th>Exploited Host Count</th>
-                        <th>CVSS Rating</th>
-                        <th>Vulnerability Target Summary</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for cve in cves %}
-                    <tr>
-                        <td>
-                            <a class="has-text-danger has-text-weight-bold" href="https://nvd.nist.gov/vuln/detail/{{ cve.cveid }}" target="_blank" rel="noopener">
-                                {{ cve.cveid }}
-                            </a>
-                        </td>
-                        <td>
-                            <span class="tag is-dark has-text-weight-bold">{{ cve.count }} hosts affected</span>
-                        </td>
-                        <td>
-                            <span class="tag {{ 'is-danger' if cve.cvss and cve.cvss >= 7.0 else ('is-warning' if cve.cvss and cve.cvss >= 4.0 else 'is-info') }} has-text-weight-bold">
-                                {{ cve.cvss or 'N/A' }}
-                            </span>
-                        </td>
-                        <td><p>{{ cve.summary }}</p></td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
 
-        <!-- Complete inventory of hosts without reported vulnerabilities -->
-        <p id="all-list" class="title is-3 is-spaced mt-6">All Hosts</p>
-        <div class="table-container box mb-6">
-            <table class="table sortable-table is-hoverable is-bordered is-striped is-fullwidth">
+        <!-- Hosts without known vulnerabilities: one compact table -->
+        <h2 id="all-list" class="title is-3 is-spaced mt-6 section-title">
+            Other Hosts <span class="tag is-success is-light is-medium">{{ all_hosts | length }}</span>
+        </h2>
+        {% if all_hosts %}
+        <div class="table-container box">
+            <table class="table sortable-table is-hoverable is-striped is-fullwidth">
                 <thead>
-                    <tr class="is-selected">
+                    <tr>
                         <th>IP Address</th>
                         <th>Hostnames</th>
                         <th>ISP Provider</th>
-                        <th>City Location</th>
+                        <th>City</th>
+                        <th>Services</th>
                         <th>Tags</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for host in all_hosts %}
-                    <tr>
+                    <tr id="{{ host.ip }}" data-search="{{ search_text(host) }}">
                         <td>
-                            <a class="has-text-link has-text-weight-bold" href="#{{ host.ip }}">{{ host.ip }}</a>
+                            <a class="has-text-link has-text-weight-bold" href="https://www.shodan.io/host/{{ host.ip }}" target="_blank" rel="noopener">{{ host.ip }}</a>
                         </td>
-                        <td>{{ host.hostnames or 'N/A' }}</td>
-                        <td>{{ host.isp or 'N/A' }}</td>
-                        <td>{{ host.city or 'N/A' }}</td>
+                        <td>{{ tag_list(host.hostnames, "is-light") }}</td>
+                        <td class="isp-cell">{{ host.isp or '—' }}</td>
+                        <td>{{ host.city or '—' }}</td>
                         <td>
-                            {% if host.tags %}
-                                {% for tag in host.tags.split() %}
-                                    <span class="tag is-info is-light">{{ tag }}</span>
-                                {% endfor %}
+                            {% for service in host.services %}
+                                <div class="service-line" title="{{ (service.data or '').strip().splitlines() | first }}">
+                                    <span class="tag is-light is-info">{{ service.port }}/{{ service.transport or '?' }}</span>
+                                    {{ [service.product, service.version] | select | join(" ") }}
+                                </div>
                             {% else %}
-                                <span class="has-text-grey-light">None</span>
-                            {% endif %}
+                                <span class="muted">—</span>
+                            {% endfor %}
                         </td>
+                        <td>{{ tag_list(host.tags) }}</td>
                     </tr>
-                {% else %}
-                    <tr><td colspan="6" class="has-text-centered has-text-grey">No non-vulnerable hosts recorded.</td></tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
+        {% else %}
+        <div class="box has-text-centered has-text-grey">Every host has at least one known vulnerability.</div>
+        {% endif %}
 
-        <!-- Services details for hosts without reported vulnerabilities -->
-        {% for host in all_hosts %}
-            <section class="section box my-5 py-5 border-non-vulnerability">
-                <div id="{{ host.ip }}" class="host-banner mb-4">
-                    <p>
-                        <a href="https://www.shodan.io/host/{{ host.ip }}" target="_blank" rel="noopener" class="title is-4 has-text-white underline">
-                            <i class="bi bi-hdd-network-fill mr-2"></i>{{ host.ip }}
-                        </a>
-                        <button class="button is-small is-ghost has-text-grey-light ml-2 copy-ip" type="button" data-ip="{{ host.ip }}" title="Copier l’adresse IP" aria-label="Copier {{ host.ip }}">
-                            <span class="icon"><i class="bi bi-clipboard"></i></span>
-                        </button>
-                        <span class="tag is-success is-light is-rounded is-medium is-pulled-right has-text-weight-bold">No Vulns</span>
-                    </p>
-                    <p class="subtitle is-6 mt-1">
-                        {% if host.hostnames %}
-                            {% for hostname in host.hostnames.split() %}
-                                {% if not loop.first %}<span class="hostname-separator" aria-hidden="true">&bull;</span>{% endif %}{{ hostname }}
-                            {% endfor %}
-                        {% else %}
-                            No associated hostname
-                        {% endif %}
-                    </p>
-                    <div class="content pt-2" style="color: #ffffff !important;">
-                        <p>
-                            <strong>ISP :</strong> {{ host.isp or 'Unknown ISP' }}
-                            <span class="mx-3">|</span>
-                            <strong>City :</strong> {{ host.city or 'Unknown City' }}
-                            {% if host.tags %}
-                                <span class="mx-3">|</span> <strong>Tags :</strong>
-                                {% for tag in host.tags.split() %}
-                                    <span class="tag is-small is-warning has-text-dark">{{ tag }}</span>
-                                {% endfor %}
-                            {% endif %}
-                        </p>
-                    </div>
-                </div>
+        <!-- Global CVE index -->
+        <h2 id="cve-list" class="title is-3 is-spaced mt-6 section-title">
+            CVE Index <span class="tag is-primary is-light is-medium">{{ cves | length }}</span>
+        </h2>
+        {% if cves %}
+        <div class="table-container box mb-3">
+            <table class="table sortable-table is-hoverable is-striped is-fullwidth" id="cve-table" data-limit="15">
+                <thead>
+                    <tr>
+                        <th>CVE ID</th>
+                        <th data-type="number">Hosts Affected</th>
+                        <th data-type="number">CVSS</th>
+                        <th>Summary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for cve in cves %}
+                    <tr data-search="{{ (cve.cveid ~ ' ' ~ (cve.summary or '')) | lower }}">
+                        <td><a class="has-text-danger has-text-weight-bold" href="https://nvd.nist.gov/vuln/detail/{{ cve.cveid }}" target="_blank" rel="noopener">{{ cve.cveid }}</a></td>
+                        <td data-sort="{{ cve.count }}"><span class="tag is-dark has-text-weight-bold">{{ cve.count }} host{{ "s" if cve.count != 1 }}</span></td>
+                        <td data-sort="{{ cve.cvss if cve.cvss is not none else -1 }}">{{ cvss_tag(cve.cvss, cve.severity) }}</td>
+                        <td class="summary-cell">{{ cve.summary or '—' }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if cves | length > 15 %}
+            <p class="has-text-centered mb-6">
+                <button class="button is-light" type="button" id="cve-more" data-total="{{ cves | length }}">Show all {{ cves | length }} CVEs</button>
+            </p>
+        {% endif %}
+        {% else %}
+        <div class="box has-text-centered has-text-grey">No CVE in this dataset.</div>
+        {% endif %}
 
-                <p class="subtitle is-5 mt-5"><i class="bi bi-cpu mr-2"></i>Exposed Open Ports & Services</p>
-                <div class="table-container">
-                    <table class="table sortable-table is-hoverable is-bordered is-striped is-fullwidth">
-                        <thead>
-                            <tr>
-                                <th>Service</th>
-                                <th>Version</th>
-                                <th>Port</th>
-                                <th>Transport</th>
-                                <th>Response</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for service in host.services %}
-                                <tr>
-                                    <td><strong>{{ service.product or 'Generic Port Probe' }}</strong></td>
-                                    <td>{{ service.version or 'Undetermined' }}</td>
-                                    <td><span class="tag is-light is-info">{{ service.port }}</span></td>
-                                    <td><span class="is-uppercase">{{ service.transport or 'Undetermined' }}</span></td>
-                                    <td>{{ (service.data or '').splitlines() | first or 'No data available' }}</td>
-                                </tr>
-                        {% else %}
-                            <tr><td colspan="5" class="has-text-centered has-text-grey-italic">No open services recorded inside database.</td></tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        {% endfor %}
-    </div> <!-- Close Main Container (from Piece 1) -->
+        <div class="box has-text-centered has-text-grey" id="no-match">No result for this filter.</div>
+    </div>
 
-    <!-- Interactive Client-Side Features -->
+    <footer class="report-footer">Generated by Shodan2DB {{ version }} · {{ generated_at }}</footer>
+
+    <a id="back-to-top" class="button is-dark is-rounded" href="#top" aria-label="Back to top" title="Back to top">
+        <span class="icon"><i class="bi bi-arrow-up"></i></span>
+    </a>
+
     <script>
         (() => {
             const savedTheme = window.localStorage.getItem('shodan2db-theme');
             if (savedTheme === 'dark') document.body.classList.add('dark-mode');
             if (savedTheme === 'light') document.body.classList.add('light-mode');
         })();
-
-        function toggleTheme() {
-            const body = document.body;
-            const isDark = body.classList.contains('dark-mode');
-            body.classList.toggle('dark-mode', !isDark);
-            body.classList.toggle('light-mode', isDark);
-            window.localStorage.setItem('shodan2db-theme', isDark ? 'light' : 'dark');
-            updateThemeButton(!isDark);
-        }
 
         function updateThemeButton(isDark) {
             const button = document.getElementById('theme-toggle');
@@ -693,13 +713,18 @@
             if (icon) icon.className = isDark ? 'bi bi-sun' : 'bi bi-moon-stars';
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = window.localStorage.getItem('shodan2db-theme');
-            const isDark = savedTheme === 'dark' ||
-                (savedTheme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-            updateThemeButton(isDark);
-            document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
-        });
+        function isDarkMode() {
+            const saved = window.localStorage.getItem('shodan2db-theme');
+            return saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        }
+
+        function toggleTheme() {
+            const dark = !isDarkMode();
+            document.body.classList.toggle('dark-mode', dark);
+            document.body.classList.toggle('light-mode', !dark);
+            window.localStorage.setItem('shodan2db-theme', dark ? 'dark' : 'light');
+            updateThemeButton(dark);
+        }
 
         function copyIp(button) {
             const ip = button.dataset.ip;
@@ -712,12 +737,10 @@
                     button.title = 'Copier l’adresse IP';
                 }, 1500);
             };
-
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(ip).then(copied);
                 return;
             }
-
             const textArea = document.createElement('textarea');
             textArea.value = ip;
             textArea.style.position = 'fixed';
@@ -729,96 +752,108 @@
             copied();
         }
 
+        /* Tables with data-limit show their first rows until "Show all" is clicked */
+        function applyLimit(table) {
+            const limit = parseInt(table.dataset.limit, 10);
+            Array.from(table.tBodies[0].rows).forEach((row, i) => {
+                row.hidden = !isNaN(limit) && i >= limit;
+            });
+        }
+
+        /* Sorting: numeric columns (data-type="number") start highest first */
+        const sortCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+        function sortTable(table, columnIndex, header) {
+            const tbody = table.tBodies[0];
+            if (!tbody) return;
+            const numeric = header.dataset.type === 'number';
+            const current = header.getAttribute('aria-sort');
+            const ascending = numeric ? current === 'descending' : current !== 'ascending';
+            table.querySelectorAll('thead th').forEach(th => th.removeAttribute('aria-sort'));
+            header.setAttribute('aria-sort', ascending ? 'ascending' : 'descending');
+            const value = row => {
+                const cell = row.cells[columnIndex];
+                return cell.dataset.sort !== undefined ? cell.dataset.sort : cell.innerText.trim();
+            };
+            const rows = Array.from(tbody.rows).filter(row => row.cells.length > columnIndex);
+            rows.sort((a, b) => {
+                const result = numeric
+                    ? (parseFloat(value(a)) || 0) - (parseFloat(value(b)) || 0)
+                    : sortCollator.compare(value(a), value(b));
+                return ascending ? result : -result;
+            });
+            rows.forEach(row => tbody.appendChild(row));
+            if (table.dataset.limit) applyLimit(table);
+        }
+
+        /* Live filter over host sections and table rows */
+        function liveSearch() {
+            const terms = document.getElementById('searchbox').value.toLowerCase().split(/\s+/).filter(Boolean);
+            const cveTable = document.getElementById('cve-table');
+            let visible = 0;
+            document.querySelectorAll('[data-search]').forEach(item => {
+                const match = terms.every(term => item.dataset.search.includes(term));
+                item.classList.toggle('is-hidden-by-search', !match);
+                if (match) visible++;
+            });
+            // While filtering, show every matching CVE instead of the top rows only
+            if (cveTable) {
+                if (terms.length) Array.from(cveTable.tBodies[0].rows).forEach(row => { row.hidden = false; });
+                else applyLimit(cveTable);
+            }
+            document.getElementById('no-match').style.display = terms.length && !visible ? 'block' : 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateThemeButton(isDarkMode());
+            document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
+            document.getElementById('searchbox')?.addEventListener('input', liveSearch);
+
+            document.querySelectorAll('.sortable-table').forEach(table => {
+                table.querySelectorAll('thead th').forEach((header, columnIndex) => {
+                    const sortIcon = document.createElement('i');
+                    sortIcon.className = 'bi bi-arrow-down-up sort-icon';
+                    sortIcon.setAttribute('aria-hidden', 'true');
+                    header.appendChild(sortIcon);
+                    header.title = 'Cliquer pour trier';
+                    header.addEventListener('click', () => sortTable(table, columnIndex, header));
+                });
+            });
+
+            const cveTable = document.getElementById('cve-table');
+            const cveMore = document.getElementById('cve-more');
+            if (cveTable) applyLimit(cveTable);
+            cveMore?.addEventListener('click', () => {
+                const expand = Boolean(cveTable.dataset.limit);
+                if (expand) delete cveTable.dataset.limit; else cveTable.dataset.limit = '15';
+                applyLimit(cveTable);
+                cveMore.textContent = expand ? 'Show top 15 only' : `Show all ${cveMore.dataset.total} CVEs`;
+            });
+
+            const backToTop = document.getElementById('back-to-top');
+            window.addEventListener('scroll', () => {
+                backToTop.classList.toggle('is-visible', window.scrollY > 800);
+            }, { passive: true });
+
+            document.querySelectorAll('.navbar-burger').forEach(el => {
+                el.addEventListener('click', () => {
+                    const targetMenu = document.getElementById(el.dataset.target);
+                    if (!targetMenu) return;
+                    const isActive = el.classList.toggle('is-active');
+                    targetMenu.classList.toggle('is-active', isActive);
+                    el.setAttribute('aria-expanded', String(isActive));
+                });
+            });
+        });
+
         document.addEventListener('click', event => {
             const copyButton = event.target.closest('.copy-ip');
             if (copyButton) copyIp(copyButton);
         });
 
-        /**
-         * Click a column header to sort its table; click again to reverse.
-         * Numeric-aware comparison: IP octets, ports and CVSS scores sort as numbers.
-         */
-        const sortCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
-
-        function sortTable(table, columnIndex, header) {
-            const tbody = table.tBodies[0];
-            if (!tbody) return;
-            const ascending = header.getAttribute('aria-sort') !== 'ascending';
-            table.querySelectorAll('thead th').forEach(th => th.removeAttribute('aria-sort'));
-            header.setAttribute('aria-sort', ascending ? 'ascending' : 'descending');
-
-            const rows = Array.from(tbody.rows).filter(row => row.cells.length > columnIndex);
-            rows.sort((a, b) => {
-                const result = sortCollator.compare(
-                    a.cells[columnIndex].innerText.trim(),
-                    b.cells[columnIndex].innerText.trim()
-                );
-                return ascending ? result : -result;
-            });
-            rows.forEach(row => tbody.appendChild(row));
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.sortable-table').forEach(table => {
-                table.querySelectorAll('thead th').forEach((header, columnIndex) => {
-                    const sortIcon = document.createElement('i');
-                    sortIcon.className = 'bi bi-arrow-down-up sort-icon';
-                    sortIcon.title = 'Cliquer pour trier';
-                    sortIcon.setAttribute('aria-label', 'Colonne triable');
-                    header.appendChild(sortIcon);
-                    header.addEventListener('click', () => sortTable(table, columnIndex, header));
-                });
-            });
-        });
-
-        /**
-         * Real-time search engine for the report.
-         * Filters the host sections and shifts focus dynamically.
-         */
-        function liveSearch() {
-            const sections = document.querySelectorAll('.section');
-            const searchInput = document.getElementById("searchbox");
-            if (!searchInput) return;
-            
-            const searchQuery = searchInput.value.toLowerCase().trim();
-            let firstVisibleCard = null;
-
-            sections.forEach(section => {
-                if (searchQuery === "" || section.innerText.toLowerCase().includes(searchQuery)) {
-                    section.classList.remove("is-hidden");
-                    // Identify the first matching host to focus on
-                    if (!firstVisibleCard) {
-                        firstVisibleCard = section;
-                    }
-                } else {
-                    section.classList.add("is-hidden");
-                }
-            });
-
-            // Smoothly refocus view on the first available record during active search
-            if (searchQuery !== "" && firstVisibleCard) {
-                firstVisibleCard.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-            }
-        }
-
-        /**
-         * Mobile Responsive Burger Menu Handler.
-         */
-        document.addEventListener('DOMContentLoaded', () => {
-            const navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
-            navbarBurgers.forEach(el => {
-                el.addEventListener('click', () => {
-                    const targetId = el.dataset.target;
-                    const targetMenu = document.getElementById(targetId);
-                    if (targetMenu) {
-                        const isActive = el.classList.toggle('is-active');
-                        targetMenu.classList.toggle('is-active', isActive);
-                        el.setAttribute('aria-expanded', String(isActive));
-                    }
-                });
-            });
+        window.addEventListener('beforeprint', () => {
+            const cveTable = document.getElementById('cve-table');
+            if (cveTable) Array.from(cveTable.tBodies[0].rows).forEach(row => { row.hidden = false; });
         });
     </script>
 </body>
 </html>
-

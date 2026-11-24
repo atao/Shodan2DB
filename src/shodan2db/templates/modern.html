@@ -1,0 +1,581 @@
+{# Shodan2DB "modern" report: self-contained (no CDN), works offline and prints cleanly. #}
+{%- set severity_labels = {
+    "critical": "Critical", "high": "High", "medium": "Medium",
+    "low": "Low", "unknown": "Unscored", "none": "No CVE"
+} -%}
+{%- macro cvss_badge(cvss, sev) -%}
+<span class="badge sev-{{ sev }}" title="{{ severity_labels[sev] }}">{{ "%.1f"|format(cvss) if cvss is not none else "n/a" }}</span>
+{%- endmacro -%}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Attack Surface Assessment · Shodan2DB</title>
+<style>
+:root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --surface-2: #f1f3f6;
+    --border: #e3e6eb;
+    --text: #1a1f29;
+    --muted: #5d6675;
+    --accent: #2f5bd3;
+    --critical: #b4232c;
+    --high: #d4580f;
+    --medium: #b98900;
+    --low: #2f6fd1;
+    --unknown: #6b7280;
+    --none: #2f8f5b;
+    --radius: 10px;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .05);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    color-scheme: light;
+}
+:root[data-theme="dark"] {
+    --bg: #0f1218;
+    --surface: #171b23;
+    --surface-2: #1e232d;
+    --border: #2a303c;
+    --text: #e6e9ef;
+    --muted: #99a2b2;
+    --accent: #7ea2ff;
+    --critical: #f0616b;
+    --high: #f59145;
+    --medium: #e8bd3a;
+    --low: #6ea1ff;
+    --unknown: #9aa3b2;
+    --none: #4fc488;
+    --shadow: none;
+    color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.mono { font-family: var(--mono); }
+.muted { color: var(--muted); }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+
+/* Header and toolbar */
+header.top {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+}
+header.top .wrap { display: flex; align-items: center; gap: 16px; height: 56px; }
+.brand { font-weight: 650; letter-spacing: -.01em; white-space: nowrap; }
+.brand span { color: var(--muted); font-weight: 400; }
+nav.links { display: flex; gap: 14px; }
+nav.links a { color: var(--muted); font-weight: 500; }
+nav.links a:hover { color: var(--text); text-decoration: none; }
+.spacer { flex: 1; }
+.search {
+    width: min(320px, 40vw);
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text);
+    font: inherit;
+}
+.search:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+button {
+    font: inherit; color: var(--text); cursor: pointer;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px;
+}
+button:hover { background: var(--surface-2); }
+#theme { font-size: 16px; line-height: 1; padding: 6px 10px; }
+
+/* Page title */
+.intro { padding: 32px 0 8px; }
+.intro h1 { margin: 0; font-size: 28px; letter-spacing: -.02em; }
+.intro p { margin: 4px 0 0; }
+
+section { margin: 28px 0; }
+h2 { font-size: 18px; margin: 0 0 12px; letter-spacing: -.01em; }
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.kpi { padding: 16px 18px; }
+.kpi .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.kpi .value { font-size: 28px; font-weight: 650; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.kpi .hint { color: var(--muted); font-size: 12px; }
+
+/* Severity distribution */
+.dist { padding: 18px; }
+.bar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--surface-2); }
+.bar span { display: block; height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.legend .item { display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.legend b { font-variant-numeric: tabular-nums; }
+
+.bg-critical { background: var(--critical); }
+.bg-high { background: var(--high); }
+.bg-medium { background: var(--medium); }
+.bg-low { background: var(--low); }
+.bg-unknown { background: var(--unknown); }
+.bg-none { background: var(--none); }
+
+/* Badges and chips */
+.badge {
+    display: inline-block; min-width: 40px; text-align: center;
+    padding: 1px 8px; border-radius: 999px;
+    font-weight: 600; font-size: 12px; font-variant-numeric: tabular-nums;
+    color: #fff;
+}
+.sev-critical { background: var(--critical); }
+.sev-high { background: var(--high); }
+.sev-medium { background: var(--medium); color: #1a1f29; }
+/* Dark theme colors are lighter: dark text keeps badges readable */
+:root[data-theme="dark"] .badge { color: #0f1218; }
+.sev-low { background: var(--low); }
+.sev-unknown { background: var(--unknown); }
+.sev-none { background: var(--none); }
+.pill {
+    display: inline-block; padding: 1px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 600; border: 1px solid currentColor;
+}
+.pill.sev-critical, .pill.sev-high, .pill.sev-medium, .pill.sev-low, .pill.sev-unknown, .pill.sev-none {
+    background: transparent;
+}
+.pill.sev-critical { color: var(--critical); }
+.pill.sev-high { color: var(--high); }
+.pill.sev-medium { color: var(--medium); }
+.pill.sev-low { color: var(--low); }
+.pill.sev-unknown { color: var(--unknown); }
+.pill.sev-none { color: var(--none); }
+.chip {
+    display: inline-block; padding: 0 7px; margin: 1px 2px 1px 0;
+    border-radius: 6px; background: var(--surface-2); border: 1px solid var(--border);
+    font-family: var(--mono); font-size: 12px;
+}
+.tag { font-family: inherit; }
+.verified { color: var(--critical); font-size: 12px; font-weight: 600; white-space: nowrap; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--muted); font-weight: 600; background: var(--surface-2);
+    white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: 0; }
+th[data-sortable] { cursor: pointer; user-select: none; }
+th[data-sortable]::after { content: " ↕"; opacity: .4; }
+th[aria-sort="ascending"]::after { content: " ↑"; opacity: 1; }
+th[aria-sort="descending"]::after { content: " ↓"; opacity: 1; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.clamp {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; max-width: 70ch;
+}
+
+/* Filters */
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.filters button[aria-pressed="true"] { background: var(--text); color: var(--surface); border-color: var(--text); }
+.filters .count { margin-left: auto; color: var(--muted); }
+
+/* Host cards */
+.hosts { display: grid; gap: 10px; }
+details.host { overflow: hidden; }
+details.host > summary {
+    list-style: none; cursor: pointer;
+    display: grid; grid-template-columns: 4px minmax(0, 1fr) auto; gap: 14px; align-items: center;
+    padding: 12px 16px 12px 0;
+}
+details.host > summary::-webkit-details-marker { display: none; }
+details.host > summary:hover { background: var(--surface-2); }
+.stripe { align-self: stretch; }
+.host-id { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; min-width: 0; }
+.host-ip { font-family: var(--mono); font-weight: 650; font-size: 15px; }
+.host-names { color: var(--muted); overflow-wrap: anywhere; }
+.host-meta { width: 100%; color: var(--muted); font-size: 13px; }
+.host-stats { display: flex; align-items: center; gap: 10px; white-space: nowrap; color: var(--muted); font-size: 13px; }
+.chevron { transition: transform .15s; color: var(--muted); }
+details[open] .chevron { transform: rotate(90deg); }
+.host-body { padding: 4px 16px 16px 20px; border-top: 1px solid var(--border); }
+.host-body h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 16px 0 8px; }
+.host-links { display: flex; gap: 16px; margin-top: 12px; font-size: 13px; }
+.host-body table { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+pre.banner {
+    margin: 6px 0 0; padding: 10px; max-height: 280px; overflow: auto;
+    background: var(--surface-2); border-radius: 6px;
+    font: 12px/1.45 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere;
+}
+details.raw > summary { cursor: pointer; color: var(--accent); font-size: 12px; }
+.banner-line { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
+.empty { padding: 28px; text-align: center; color: var(--muted); }
+
+footer { padding: 24px 0 40px; color: var(--muted); font-size: 12px; text-align: center; }
+
+@media (max-width: 720px) {
+    nav.links { display: none; }
+    details.host > summary { grid-template-columns: 4px minmax(0, 1fr); }
+    .host-stats { grid-column: 2; }
+}
+@media print {
+    header.top, .filters, .host-links, details.raw > summary, .chevron { display: none !important; }
+    body { background: #fff; font-size: 11px; }
+    .card { box-shadow: none; break-inside: avoid; }
+    details.host { break-inside: auto; }
+    pre.banner { max-height: none; }
+}
+</style>
+<script>
+    // Apply the saved theme before first paint to avoid a flash
+    (function () {
+        var saved = localStorage.getItem("shodan2db-theme");
+        var dark = saved ? saved === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+    })();
+</script>
+</head>
+<body>
+<header class="top">
+    <div class="wrap">
+        <div class="brand">Shodan2DB <span>· Attack surface</span></div>
+        <nav class="links">
+            <a href="#overview">Overview</a>
+            <a href="#hosts">Hosts</a>
+            <a href="#cves">CVEs</a>
+        </nav>
+        <div class="spacer"></div>
+        <input id="search" class="search" type="search" placeholder="Search IP, name, product, CVE…" aria-label="Search hosts">
+        <button id="theme" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+    </div>
+</header>
+
+<main class="wrap">
+    <div class="intro">
+        <h1>Attack Surface Assessment</h1>
+        <p class="muted">Generated {{ generated_at }} from Shodan data · {{ total_hosts }} hosts</p>
+    </div>
+
+    {%- set findings = severity_counts.values() | sum %}
+    {%- set crit_high = severity_counts.critical + severity_counts.high %}
+    <section id="overview">
+        <div class="kpis">
+            <div class="card kpi">
+                <div class="label">Hosts</div>
+                <div class="value">{{ total_hosts }}</div>
+                <div class="hint">{{ total_services }} exposed services</div>
+            </div>
+            <div class="card kpi">
+                <div class="label">Vulnerable hosts</div>
+                <div class="value">{{ vulns_hosts | length }}</div>
+                <div class="hint">{{ "%.0f"|format(100 * (vulns_hosts | length) / total_hosts) if total_hosts else 0 }}% of hosts</div>
+            </div>
+            <div class="card kpi">
+                <div class="label">Findings</div>
+                <div class="value">{{ findings }}</div>
+                <div class="hint">CVE × host pairs</div>
+            </div>
+            <div class="card kpi">
+                <div class="label">Critical &amp; high</div>
+                <div class="value" style="color: var(--{{ 'critical' if crit_high else 'none' }})">{{ crit_high }}</div>
+                <div class="hint">CVSS ≥ 7.0</div>
+            </div>
+            <div class="card kpi">
+                <div class="label">Unique CVEs</div>
+                <div class="value">{{ cves | length }}</div>
+                <div class="hint">across all hosts</div>
+            </div>
+        </div>
+
+        <div class="card dist" style="margin-top: 12px">
+            <h2>Findings by severity</h2>
+            {% if findings %}
+                <div class="bar" role="img" aria-label="Findings by severity">
+                    {% for sev, count in severity_counts.items() if count %}
+                        <span class="bg-{{ sev }}" style="width: {{ 100 * count / findings }}%" title="{{ severity_labels[sev] }}: {{ count }}"></span>
+                    {% endfor %}
+                </div>
+                <div class="legend">
+                    {% for sev, count in severity_counts.items() %}
+                        <div class="item"><span class="dot bg-{{ sev }}"></span>{{ severity_labels[sev] }} <b>{{ count }}</b></div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="muted" style="margin: 0">No known vulnerabilities in this dataset.</p>
+            {% endif %}
+        </div>
+    </section>
+
+    <section id="hosts">
+        <h2>Hosts</h2>
+        <div class="filters" role="group" aria-label="Filter by severity">
+            <button type="button" data-filter="all" aria-pressed="true">All</button>
+            {% for sev in ("critical", "high", "medium", "low", "unknown", "none") %}
+                {% set n = hosts | selectattr("severity", "equalto", sev) | list | length %}
+                {% if n %}
+                    <button type="button" data-filter="{{ sev }}" aria-pressed="false"><span class="dot bg-{{ sev }}" style="display: inline-block"></span> {{ severity_labels[sev] }} ({{ n }})</button>
+                {% endif %}
+            {% endfor %}
+            <button type="button" id="toggle-all">Expand all</button>
+            <span class="count" id="host-count"></span>
+        </div>
+
+        <div class="hosts">
+        {% for host in hosts %}
+            {%- set search_text = [host.ip, host.hostnames, host.isp, host.org, host.city, host.country, host.tags]
+                | select | join(" ") ~ " " ~ host.products | join(" ") ~ " " ~ host.ports | join(" ")
+                ~ " " ~ host.cves | map(attribute="cveid") | join(" ") %}
+            <details class="card host" id="host-{{ host.ip }}" data-severity="{{ host.severity }}" data-search="{{ search_text | lower }}">
+                <summary>
+                    <span class="stripe bg-{{ host.severity }}"></span>
+                    <div class="host-id">
+                        <span class="host-ip">{{ host.ip }}</span>
+                        {% if host.hostnames %}<span class="host-names">{{ host.hostnames.split() | join(" · ") }}</span>{% endif %}
+                        <div class="host-meta">
+                            {{ [host.org or host.isp, [host.city, host.country] | select | join(", ")] | select | join(" — ") or "Unknown location" }}
+                            {% if host.tags %}
+                                {% for tag in host.tags.split() %}<span class="chip tag">{{ tag }}</span>{% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="host-stats">
+                        <span>{{ host.ports | length }} port{{ "s" if host.ports | length != 1 }}</span>
+                        {% if host.nbvulns %}
+                            <span>{{ host.nbvulns }} CVE{{ "s" if host.nbvulns != 1 }}</span>
+                            {{ cvss_badge(host.max_cvss, host.severity) }}
+                        {% else %}
+                            <span class="pill sev-none">No CVE</span>
+                        {% endif %}
+                        <span class="chevron" aria-hidden="true">›</span>
+                    </div>
+                </summary>
+
+                <div class="host-body">
+                    <h3>Exposed services</h3>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr><th class="num">Port</th><th>Proto</th><th>Service</th><th>Banner</th></tr>
+                            </thead>
+                            <tbody>
+                            {% for service in host.services %}
+                                {%- set lines = (service.data or "").strip().splitlines() %}
+                                <tr>
+                                    <td class="num mono">{{ service.port }}</td>
+                                    <td class="mono">{{ (service.transport or "?") | upper }}</td>
+                                    <td>{{ [service.product, service.version] | select | join(" ") or "—" }}</td>
+                                    <td>
+                                        <div class="banner-line">{{ lines[0] if lines else "No banner" }}</div>
+                                        {% if lines | length > 1 %}
+                                            <details class="raw"><summary>Full banner ({{ lines | length }} lines)</summary><pre class="banner">{{ service.data }}</pre></details>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="4" class="muted">No services recorded.</td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if host.cves %}
+                        <h3>Vulnerabilities</h3>
+                        <div class="table-wrap">
+                            <table class="sortable">
+                                <thead>
+                                    <tr>
+                                        <th data-sortable>CVE</th>
+                                        <th data-sortable class="num">CVSS</th>
+                                        <th>Ports</th>
+                                        <th>Summary</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for cve in host.cves %}
+                                    <tr>
+                                        <td class="mono">
+                                            <a href="https://nvd.nist.gov/vuln/detail/{{ cve.cveid }}" target="_blank" rel="noopener">{{ cve.cveid }}</a>
+                                            {% if cve.verified %}<div class="verified">verified</div>{% endif %}
+                                        </td>
+                                        <td class="num" data-sort="{{ cve.cvss if cve.cvss is not none else -1 }}">{{ cvss_badge(cve.cvss, cve.severity) }}</td>
+                                        <td>{% for port in cve.ports %}<span class="chip">{{ port }}</span>{% else %}<span class="muted">—</span>{% endfor %}</td>
+                                        <td><div class="clamp" title="{{ cve.summary or '' }}">{{ cve.summary or "—" }}</div></td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+
+                    <div class="host-links">
+                        <a href="https://www.shodan.io/host/{{ host.ip }}" target="_blank" rel="noopener">Open in Shodan ↗</a>
+                        <a href="#host-{{ host.ip }}">Permalink</a>
+                    </div>
+                </div>
+            </details>
+        {% endfor %}
+        </div>
+        <div class="card empty" id="no-match" hidden>No host matches the current filter.</div>
+    </section>
+
+    {% if cves %}
+    <section id="cves">
+        <h2>CVEs across the estate</h2>
+        <div class="card table-wrap">
+            <table class="sortable" id="cve-table" data-limit="10">
+                <thead>
+                    <tr>
+                        <th data-sortable>CVE</th>
+                        <th data-sortable class="num">CVSS</th>
+                        <th data-sortable class="num">Hosts</th>
+                        <th>Summary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for cve in cves %}
+                    <tr>
+                        <td class="mono"><a href="https://nvd.nist.gov/vuln/detail/{{ cve.cveid }}" target="_blank" rel="noopener">{{ cve.cveid }}</a></td>
+                        <td class="num" data-sort="{{ cve.cvss if cve.cvss is not none else -1 }}">{{ cvss_badge(cve.cvss, cve.severity) }}</td>
+                        <td class="num">{{ cve.count }}</td>
+                        <td><div class="clamp" title="{{ cve.summary or '' }}">{{ cve.summary or '—' }}</div></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if cves | length > 10 %}
+            <p><button type="button" id="cve-more" data-total="{{ cves | length }}">Show all {{ cves | length }} CVEs</button></p>
+        {% endif %}
+    </section>
+    {% endif %}
+</main>
+
+<footer>Generated by Shodan2DB {{ version }} · {{ generated_at }}</footer>
+
+<script>
+(function () {
+    // Theme toggle
+    document.getElementById("theme").addEventListener("click", function () {
+        var dark = document.documentElement.dataset.theme !== "dark";
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        localStorage.setItem("shodan2db-theme", dark ? "dark" : "light");
+    });
+
+    // Long tables (data-limit) show their first rows until expanded; sorting keeps the limit
+    function applyLimit(table) {
+        var limit = parseInt(table.dataset.limit, 10);
+        Array.from(table.tBodies[0].rows).forEach(function (row, i) {
+            row.hidden = !isNaN(limit) && i >= limit;
+        });
+    }
+    var cveTable = document.getElementById("cve-table");
+    var cveMore = document.getElementById("cve-more");
+    if (cveTable) applyLimit(cveTable);
+    if (cveMore) {
+        cveMore.addEventListener("click", function () {
+            var expanded = !cveTable.dataset.limit;
+            if (expanded) cveTable.dataset.limit = "10"; else delete cveTable.dataset.limit;
+            applyLimit(cveTable);
+            cveMore.textContent = expanded ? "Show all " + cveMore.dataset.total + " CVEs" : "Show top 10 only";
+        });
+    }
+
+    // Sortable tables (numeric-aware; cells may provide data-sort)
+    var collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+    function cellValue(row, index) {
+        var cell = row.cells[index];
+        return cell.dataset.sort !== undefined ? cell.dataset.sort : cell.innerText.trim();
+    }
+    document.querySelectorAll("table.sortable").forEach(function (table) {
+        table.querySelectorAll("th[data-sortable]").forEach(function (th) {
+            th.tabIndex = 0;
+            var sort = function () {
+                var index = th.cellIndex;
+                var numeric = th.classList.contains("num");
+                // Numbers (CVSS, host counts) sort highest first on the first click
+                var current = th.getAttribute("aria-sort");
+                var ascending = numeric ? current === "descending" : current !== "ascending";
+                table.querySelectorAll("th").forEach(function (h) { h.removeAttribute("aria-sort"); });
+                th.setAttribute("aria-sort", ascending ? "ascending" : "descending");
+                var body = table.tBodies[0];
+                Array.from(body.rows).sort(function (a, b) {
+                    var x = cellValue(a, index), y = cellValue(b, index);
+                    var r = numeric ? (parseFloat(x) || 0) - (parseFloat(y) || 0) : collator.compare(x, y);
+                    return ascending ? r : -r;
+                }).forEach(function (row) { body.appendChild(row); });
+                applyLimit(table);
+            };
+            th.addEventListener("click", sort);
+            th.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); sort(); } });
+        });
+    });
+
+    // Host search + severity filter
+    var hosts = Array.from(document.querySelectorAll("details.host"));
+    var search = document.getElementById("search");
+    var counter = document.getElementById("host-count");
+    var noMatch = document.getElementById("no-match");
+    var filterButtons = document.querySelectorAll(".filters button[data-filter]");
+    var activeFilter = "all";
+
+    function applyFilters() {
+        var terms = search.value.toLowerCase().split(/\s+/).filter(Boolean);
+        var shown = 0;
+        hosts.forEach(function (host) {
+            var text = host.dataset.search;
+            var visible = (activeFilter === "all" || host.dataset.severity === activeFilter)
+                && terms.every(function (t) { return text.indexOf(t) !== -1; });
+            host.hidden = !visible;
+            if (visible) shown++;
+        });
+        counter.textContent = shown === hosts.length ? hosts.length + " hosts" : shown + " of " + hosts.length + " hosts";
+        noMatch.hidden = shown !== 0;
+    }
+    search.addEventListener("input", applyFilters);
+    filterButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+            activeFilter = button.dataset.filter;
+            filterButtons.forEach(function (b) { b.setAttribute("aria-pressed", String(b === button)); });
+            applyFilters();
+        });
+    });
+    applyFilters();
+
+    // Expand / collapse all
+    var toggleAll = document.getElementById("toggle-all");
+    toggleAll.addEventListener("click", function () {
+        var open = toggleAll.textContent === "Expand all";
+        hosts.forEach(function (h) { if (!h.hidden) h.open = open; });
+        toggleAll.textContent = open ? "Collapse all" : "Expand all";
+    });
+
+    // Open the most severe host, and any host targeted by the URL
+    // getElementById: IPs contain dots/colons that querySelector would misread
+    var target = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (target && target.matches("details.host")) target.open = true;
+    else if (hosts.length && hosts[0].dataset.severity !== "none") hosts[0].open = true;
+
+    // Printing shows every host fully expanded
+    window.addEventListener("beforeprint", function () {
+        hosts.forEach(function (h) { h.open = true; });
+        if (cveTable) Array.from(cveTable.tBodies[0].rows).forEach(function (row) { row.hidden = false; });
+    });
+    window.addEventListener("afterprint", function () { if (cveTable) applyLimit(cveTable); });
+})();
+</script>
+</body>
+</html>

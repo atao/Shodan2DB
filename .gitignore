@@ -165,3 +165,6 @@ secrets.py
 *.json.gz
 *.html
 .DS_Store
+
+# Built-in report templates are source files
+!src/shodan2db/templates/*.html
