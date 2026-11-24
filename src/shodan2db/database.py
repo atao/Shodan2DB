@@ -233,8 +233,19 @@ def init_database(database, verbose=False):
         pass
 
 
+def merge_words(*values):
+    """Space-separated union of the given strings/lists, without duplicates."""
+    words = []
+    for value in values:
+        for word in value.split() if isinstance(value, str) else value or ():
+            if word not in words:
+                words.append(word)
+    return " ".join(words) or None
+
+
 def _join(values):
-    return " ".join(values) if values else None
+    # Shodan sometimes lists the same hostname twice in one banner
+    return merge_words(values)
 
 
 def _service_row(banner):

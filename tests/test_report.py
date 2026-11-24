@@ -57,3 +57,22 @@ def test_template_error_is_reported(tmp_path, populated_db):
 
     with pytest.raises(Shodan2DBError, match="Template error"):
         export_html(populated_db, tmp_path / "r.html", template)
+
+
+def test_host_names_and_tags_merge_all_banners(tmp_path, db):
+    from conftest import banner, write_export
+    from shodan2db import parse_file
+
+    export = write_export(
+        tmp_path / "in.json",
+        [
+            banner(80, hostnames=["a.example.com", "a.example.com"], tags=["cdn"]),
+            banner(443, hostnames=["a.example.com", "b.example.com"], tags=["eol"]),
+        ],
+    )
+    parse_file(export, db)
+    with open_database(db) as conn:
+        [host] = load_report_data(conn)["all_hosts"]
+
+    assert host["hostnames"] == "a.example.com b.example.com"
+    assert host["tags"] == "cdn eol"

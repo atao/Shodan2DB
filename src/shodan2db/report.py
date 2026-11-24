@@ -4,7 +4,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, TemplateError, select_autoescape
 
-from .database import Shodan2DBError, log, open_database
+from .database import Shodan2DBError, log, merge_words, open_database
 
 DEFAULT_TEMPLATE = Path(__file__).resolve().parent / "templates" / "report.html"
 
@@ -16,14 +16,29 @@ def load_report_data(conn):
     """
     hosts = {}
     for row in conn.execute("""
-        SELECT ip, MAX(hostnames) AS hostnames, MAX(isp) AS isp,
-               MAX(city) AS city, MAX(tags) AS tags
+        SELECT ip, hostnames, isp, city, tags
         FROM services
         WHERE ip IS NOT NULL
-        GROUP BY ip
-        ORDER BY ip
+        ORDER BY ip, port
     """):
-        hosts[row["ip"]] = {**dict(row), "services": [], "vulns": [], "nbvulns": 0}
+        host = hosts.setdefault(
+            row["ip"],
+            {
+                "ip": row["ip"],
+                "hostnames": None,
+                "isp": None,
+                "city": None,
+                "tags": None,
+                "services": [],
+                "vulns": [],
+                "nbvulns": 0,
+            },
+        )
+        # Each banner may list different names/tags: keep them all
+        host["hostnames"] = merge_words(host["hostnames"], row["hostnames"])
+        host["tags"] = merge_words(host["tags"], row["tags"])
+        host["isp"] = host["isp"] or row["isp"]
+        host["city"] = host["city"] or row["city"]
 
     total_services = 0
     for row in conn.execute("""
