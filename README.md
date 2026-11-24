@@ -33,16 +33,16 @@ The provided template uses Bulma CSS.
 - Python 3.9 or later.
 - An export obtained through Shodan’s supported export features.
 
-With [uv](https://docs.astral.sh/uv/) (recommended), dependencies are installed on first run:
+With [uv](https://docs.astral.sh/uv/), dependencies are installed on first run:
 
 ```bash
 uv run shodan2db.py --help
 ```
 
-Or with pip:
+Without uv, install the two runtime dependencies with pip:
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install click jinja2
 ```
 
 Run the tests and linter:
