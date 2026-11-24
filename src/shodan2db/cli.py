@@ -1,4 +1,6 @@
-"""Command-line interface: `shodan2db parse` and `shodan2db export`."""
+"""Command-line interface: `shodan2db parse`, `export` and `interactive`."""
+
+import sys
 
 import click
 
@@ -18,10 +20,35 @@ def _run(func, *args, **kwargs):
         raise click.ClickException(str(e)) from e
 
 
-@click.group(context_settings=CONTEXT_SETTINGS)
+def _is_terminal():
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
+@click.group(context_settings=CONTEXT_SETTINGS, invoke_without_command=True)
 @click.version_option(__version__, "-V", "--version")
-def cli():
-    """Parse Shodan JSON exports into SQLite and generate HTML / osintracker reports."""
+@click.pass_context
+def cli(ctx):
+    """
+    Parse Shodan JSON exports into SQLite and generate HTML / osintracker reports.
+
+    Run without a command in a terminal to start the interactive mode.
+    """
+    if ctx.invoked_subcommand is None:
+        if _is_terminal():
+            ctx.invoke(interactive)
+        else:
+            click.echo(ctx.get_help())
+
+
+@cli.command(context_settings=CONTEXT_SETTINGS)
+def interactive():
+    """Choose exports, database and reports from menus."""
+    if not _is_terminal():
+        raise click.ClickException("Interactive mode needs a terminal.")
+    # Imported here so the regular commands do not load prompt_toolkit
+    from .interactive import run
+
+    _run(run)
 
 
 @cli.command(context_settings=CONTEXT_SETTINGS)
