@@ -1,13 +1,11 @@
 """Command-line interface: `shodan2db parse` and `shodan2db export`."""
 
-from pathlib import Path
-
 import click
 
 from . import __version__
 from .database import Shodan2DBError, parse_file
 from .osintracker import export_osintracker
-from .report import DEFAULT_TEMPLATE, export_html
+from .report import BUILTIN_TEMPLATES, export_html
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
@@ -73,12 +71,13 @@ def parse(input_file, database, verbose):
     help="Output path for the HTML report.",
 )
 @click.option(
+    "--template",
     "--template-file",
     "-t",
-    default=DEFAULT_TEMPLATE,
-    show_default="built-in report.html",
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="Jinja2 template for the HTML report.",
+    "template",
+    default="classic",
+    show_default=True,
+    help=f"Built-in template ({', '.join(BUILTIN_TEMPLATES)}) or path to a Jinja2 template.",
 )
 @click.option(
     "--osint",
@@ -94,7 +93,7 @@ def parse(input_file, database, verbose):
     help="Output path for the osintracker JSON file.",
 )
 @click.option("--verbose", "-v", is_flag=True, help="Verbose mode.")
-def export(database, formats, output, template_file, osint, osint_output, verbose):
+def export(database, formats, output, template, osint, osint_output, verbose):
     """
     Export the database as an HTML report, an osintracker JSON file, or both.
 
@@ -102,11 +101,12 @@ def export(database, formats, output, template_file, osint, osint_output, verbos
     Examples:
       shodan2db export -d audit.db                       # both exports
       shodan2db export -d audit.db -f html -o report.html
+      shodan2db export -d audit.db -f html -t modern
       shodan2db export -d audit.db -f osint --osint "Campaign"
     """
     formats = formats.lower()
     if formats in ("html", "all"):
-        _run(export_html, database, output, template_file, verbose=verbose)
+        _run(export_html, database, output, template, verbose=verbose)
     if formats in ("osint", "all"):
         _run(export_osintracker, database, osint_output, alias=osint, verbose=verbose)
 
