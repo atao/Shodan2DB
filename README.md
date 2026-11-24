@@ -25,6 +25,7 @@ Reports use a Jinja2 template that you can replace with your own (see [Templates
 - **HTML report generation** with sortable tables and client-side search.
 - **Two built-in report templates**: `classic` (Bulma) and `modern` (self-contained, severity-focused), or your own Jinja2 template.
 - **Osintracker export** as a JSON graph of IPs, host/domain names and their relations.
+- **Interactive mode** to pick exports, database and reports from menus.
 
 ## Installation
 
@@ -44,21 +45,36 @@ uv run shodan2db --help
 
 Without uv: `python -m pip install .` from a clone.
 
+## Interactive mode
+
+Run `shodan2db` without arguments (or `shodan2db interactive`) in a terminal and answer the menus:
+
+1. Import exports, generate reports, or both.
+2. Select the Shodan exports found in the current folder (newest first, pre-selected) or type another path.
+3. Pick an existing database (with its number of hosts and CVEs) or create a new one.
+4. Choose the reports (HTML and/or osintracker), the template and the output files.
+5. Review the summary, confirm, and optionally open the HTML report.
+
+Use the arrow keys to move, space to select, enter to confirm and Ctrl-C to cancel at any time.
+
 ## Commands
 
 ```bash
-Usage: shodan2db [OPTIONS] COMMAND [ARGS]...
+Usage: shodan2db [OPTIONS] [COMMAND] [ARGS]...
 
   Parse Shodan JSON exports into SQLite and generate HTML / osintracker
   reports.
+
+  Run without a command in a terminal to start the interactive mode.
 
 Options:
   -V, --version  Show the version and exit.
   -h, --help     Show this message and exit.
 
 Commands:
-  export  Export the database as an HTML report, an osintracker JSON...
-  parse   Parse a Shodan export and store it into a SQLite database.
+  export       Export the database as an HTML report, an osintracker JSON...
+  interactive  Choose exports, database and reports from menus.
+  parse        Parse a Shodan export and store it into a SQLite database.
 ```
 
 ### Command : parse
@@ -116,7 +132,7 @@ Options:
 
 <img src="img/Shodan Download.png">
 
-4. Import your results and compile your threat report utilizing the CLI sequences:
+4. Run `shodan2db` in the download folder and follow the [interactive mode](#interactive-mode), or use the commands:
 
 ```bash
 # Step 1: Parse and seed your structured SQLite layer
