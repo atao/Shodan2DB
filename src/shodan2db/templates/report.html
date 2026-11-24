@@ -12,8 +12,6 @@
     <!-- Standard Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
-    <!-- Client-side table sorting -->
-    <script src="https://unpkg.com/tablesort@5.6.0/dist/tablesort.min.js"></script>
     
     <!-- Custom Layout Adjustments -->
     <style>
@@ -351,13 +349,13 @@
             <div class="level-item has-text-centered">
                 <div>
                     <p class="heading">Vulnerabilities</p>
-                    <p class="title has-text-danger">{{ vulns | length }}</p>
+                    <p class="title has-text-danger">{{ total_vulns }}</p>
                 </div>
             </div>
             <div class="level-item has-text-centered">
                 <div>
                     <p class="heading">Services</p>
-                    <p class="title has-text-warning">{{ services | length }}</p>
+                    <p class="title has-text-warning">{{ total_services }}</p>
                 </div>
             </div>
             <div class="level-item has-text-centered">
@@ -464,10 +462,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                        {% set ns_services = namespace(has_services=false) %}
-                        {% for service in services %}
-                            {% if service.ip == host.ip %}
-                                {% set ns_services.has_services = true %}
+                        {% for service in host.services %}
                                 <tr>
                                     <td><strong>{{ service.product or 'Generic Port Probe' }}</strong></td>
                                     <td>{{ service.version or 'Undetermined' }}</td>
@@ -479,11 +474,9 @@
                                     <td><span class="is-uppercase">{{ service.transport }}</span></td>
                                     <td>{{ (service.data or '').splitlines() | first or 'No data available' }}</td>
                                 </tr>
-                            {% endif %}
+                        {% else %}
+                            <tr><td colspan="5" class="has-text-centered has-text-grey-italic">No open services recorded inside database.</td></tr>
                         {% endfor %}
-                        {% if not ns_services.has_services %}
-                            <tr><td colspan="5" class="has-text-centered has-text-grey-italic">No open services maps recorded inside database.</td></tr>
-                        {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -495,20 +488,25 @@
                         <thead>
                             <tr>
                                 <th style="width: 15%">CVE ID</th>
+                                <th style="width: 8%">Port</th>
                                 <th style="width: 10%">CVSS Score</th>
                                 <th>Vulnerability Summary Description</th>
                             </tr>
                         </thead>
                         <tbody>
-                        {% set ns_vuln = namespace(has_vulns=false) %}
-                        {% for vuln in vulns %}
-                            {% if vuln.ip == host.ip %}
-                                {% set ns_vuln.has_vulns = true %}
+                        {% for vuln in host.vulns %}
                                 <tr>
                                     <td>
                                         <a class="has-text-danger has-text-weight-bold" href="https://nvd.nist.gov/vuln/detail/{{ vuln.cveid }}" target="_blank" rel="noopener">
                                             {{ vuln.cveid }}
                                         </a>
+                                    </td>
+                                    <td>
+                                        {% if vuln.port %}
+                                            <span class="tag is-light is-info">{{ vuln.port }}</span>
+                                        {% else %}
+                                            <span class="has-text-grey">N/A</span>
+                                        {% endif %}
                                     </td>
                                     <td>
                                         <span class="tag {{ 'is-danger' if vuln.cvss and vuln.cvss >= 7.0 else ('is-warning' if vuln.cvss and vuln.cvss >= 4.0 else 'is-info') }} has-text-weight-bold">
@@ -517,11 +515,9 @@
                                     </td>
                                     <td><p>{{ vuln.summary or 'No public descriptions details synchronized.' }}</p></td>
                                 </tr>
-                            {% endif %}
+                        {% else %}
+                            <tr><td colspan="4" class="has-text-centered has-text-grey-italic">No vulnerabilities stored for this host.</td></tr>
                         {% endfor %}
-                        {% if not ns_vuln.has_vulns %}
-                            <tr><td colspan="3" class="has-text-centered has-text-grey-italic">No vulnerabilities stored for this host.</td></tr>
-                        {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -651,10 +647,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                        {% set ns_all_services = namespace(has_services=false) %}
-                        {% for service in all_services %}
-                            {% if service.ip == host.ip %}
-                                {% set ns_all_services.has_services = true %}
+                        {% for service in host.services %}
                                 <tr>
                                     <td><strong>{{ service.product or 'Generic Port Probe' }}</strong></td>
                                     <td>{{ service.version or 'Undetermined' }}</td>
@@ -662,11 +655,9 @@
                                     <td><span class="is-uppercase">{{ service.transport or 'Undetermined' }}</span></td>
                                     <td>{{ (service.data or '').splitlines() | first or 'No data available' }}</td>
                                 </tr>
-                            {% endif %}
-                        {% endfor %}
-                        {% if not ns_all_services.has_services %}
+                        {% else %}
                             <tr><td colspan="5" class="has-text-centered has-text-grey-italic">No open services recorded inside database.</td></tr>
-                        {% endif %}
+                        {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -743,16 +734,40 @@
             if (copyButton) copyIp(copyButton);
         });
 
+        /**
+         * Click a column header to sort its table; click again to reverse.
+         * Numeric-aware comparison: IP octets, ports and CVSS scores sort as numbers.
+         */
+        const sortCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+        function sortTable(table, columnIndex, header) {
+            const tbody = table.tBodies[0];
+            if (!tbody) return;
+            const ascending = header.getAttribute('aria-sort') !== 'ascending';
+            table.querySelectorAll('thead th').forEach(th => th.removeAttribute('aria-sort'));
+            header.setAttribute('aria-sort', ascending ? 'ascending' : 'descending');
+
+            const rows = Array.from(tbody.rows).filter(row => row.cells.length > columnIndex);
+            rows.sort((a, b) => {
+                const result = sortCollator.compare(
+                    a.cells[columnIndex].innerText.trim(),
+                    b.cells[columnIndex].innerText.trim()
+                );
+                return ascending ? result : -result;
+            });
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.sortable-table').forEach(table => {
-                table.querySelectorAll('thead th').forEach(header => {
+                table.querySelectorAll('thead th').forEach((header, columnIndex) => {
                     const sortIcon = document.createElement('i');
                     sortIcon.className = 'bi bi-arrow-down-up sort-icon';
                     sortIcon.title = 'Cliquer pour trier';
                     sortIcon.setAttribute('aria-label', 'Colonne triable');
                     header.appendChild(sortIcon);
+                    header.addEventListener('click', () => sortTable(table, columnIndex, header));
                 });
-                new Tablesort(table);
             });
         });
 
