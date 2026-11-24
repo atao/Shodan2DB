@@ -76,3 +76,30 @@ def test_host_names_and_tags_merge_all_banners(tmp_path, db):
 
     assert host["hostnames"] == "a.example.com b.example.com"
     assert host["tags"] == "cdn eol"
+
+
+def test_modern_template_is_self_contained(tmp_path, populated_db):
+    export_html(populated_db, tmp_path / "m.html", "modern")
+    html = (tmp_path / "m.html").read_text()
+
+    assert "<link" not in html and "<script src" not in html
+    assert 'data-severity="critical"' in html
+    assert 'data-severity="none"' in html
+    # CVE-2024-0001 is listed once for the host, with both ports
+    assert html.count("detail/CVE-2024-0001") == 2  # CVE table + host table
+    assert '<span class="chip">80</span><span class="chip">443</span>' in html
+
+
+def test_severity_summary(populated_db):
+    with open_database(populated_db) as conn:
+        data = load_report_data(conn)
+
+    assert data["severity_counts"] == {
+        "critical": 1, "high": 0, "medium": 1, "low": 0, "unknown": 0,
+    }  # fmt: skip
+    assert [h["severity"] for h in data["hosts"]] == ["critical", "none"]
+
+
+def test_unknown_template_name(tmp_path, populated_db):
+    with pytest.raises(Shodan2DBError, match="built-in: classic, modern"):
+        export_html(populated_db, tmp_path / "r.html", "fancy")

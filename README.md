@@ -23,7 +23,7 @@ Reports use a Jinja2 template that you can replace with your own (see [Templates
 - **Local SQLite storage** for services, network metadata, tags, and vulnerabilities.
 - **Vulnerability deduplication** per IP address, service port and CVE.
 - **HTML report generation** with sortable tables and client-side search.
-- **Customizable reports** using a Jinja2 template.
+- **Two built-in report templates**: `classic` (Bulma) and `modern` (self-contained, severity-focused), or your own Jinja2 template.
 - **Osintracker export** as a JSON graph of IPs, host/domain names and their relations.
 
 ## Installation
@@ -86,18 +86,20 @@ Usage: shodan2db export [OPTIONS]
   Export the database as an HTML report, an osintracker JSON file, or both.
 
 Options:
-  -d, --database FILE            Path to the SQLite database file.  [required]
-  -f, --format [html|osint|all]  Which export(s) to generate.  [default: all]
-  -o, --output FILE              Output path for the HTML report.  [default:
-                                 shodan.html]
-  -t, --template-file FILE       Jinja2 template for the HTML report.
-                                 [default: (built-in report.html)]
-  --osint TEXT                   Central entity name for the osintracker
-                                 export.  [default: shodan]
-  --osint-output FILE            Output path for the osintracker JSON file.
-                                 [default: assets_osintracker.json]
-  -v, --verbose                  Verbose mode.
-  -h, --help                     Show this message and exit.
+  -d, --database FILE             Path to the SQLite database file.
+                                  [required]
+  -f, --format [html|osint|all]   Which export(s) to generate.  [default: all]
+  -o, --output FILE               Output path for the HTML report.  [default:
+                                  shodan.html]
+  -t, --template, --template-file TEXT
+                                  Built-in template (classic, modern) or path
+                                  to a Jinja2 template.  [default: classic]
+  --osint TEXT                    Central entity name for the osintracker
+                                  export.  [default: shodan]
+  --osint-output FILE             Output path for the osintracker JSON file.
+                                  [default: assets_osintracker.json]
+  -v, --verbose                   Verbose mode.
+  -h, --help                      Show this message and exit.
 ```
 
 ## Quickstart
@@ -156,15 +158,30 @@ The schema is versioned (`PRAGMA user_version`); databases created by older rele
 
 ## Templates Customization
 
-The built-in template is [src/shodan2db/templates/report.html](src/shodan2db/templates/report.html). To customize it, copy it anywhere and pass your copy with `-t` (editing the installed file would be overwritten by updates):
+Two templates are built in, selected with `-t`:
+
+| Template | Description |
+|---|---|
+| `classic` (default) | The original Bulma report. Loads Bulma CSS and Bootstrap Icons from a CDN, so it needs internet access to be styled. |
+| `modern` | Self-contained (no external resources, works offline). Severity overview, collapsible host cards sorted by risk, each CVE listed once with its ports, search and severity filters, dark mode, print-friendly. |
+
+```bash
+shodan2db export -d audit.db -f html -t modern -o audit.html
+```
+
+To customize a report, copy a built-in template from [src/shodan2db/templates/](src/shodan2db/templates/) and pass your copy with `-t` (editing the installed file would be overwritten by updates):
 
 ```bash
 shodan2db export -d audit.db -f html -t ./my_report.html -o audit.html
 ```
 
-The template receives `vulns_hosts` and `all_hosts` (each host with its `services` and `vulns`), `cves`, `total_hosts`, `total_services` and `total_vulns`.
+Templates receive:
 
-The default layout uses **Bulma CSS** and **Bootstrap Icons** loaded from a CDN: opening the report requires internet access for its styling.
+- `hosts`: every host sorted by risk; `vulns_hosts` / `all_hosts`: hosts with / without CVEs. Each host has `ip`, `hostnames`, `isp`, `org`, `city`, `country`, `tags`, `ports`, `products`, `services`, `cves` (one entry per CVE with its `ports`, `cvss`, `severity`, `summary`, `verified`), `vulns` (one row per CVE and port), `nbvulns`, `max_cvss` and `severity`.
+- `cves`: CVEs across all hosts with `count` (hosts affected), `cvss`, `severity`, `summary`.
+- `severity_counts`, `total_hosts`, `total_services`, `total_vulns`, `generated_at`, `version`.
+
+Severities follow CVSS v3 ratings: `critical` (≥ 9.0), `high` (≥ 7.0), `medium` (≥ 4.0), `low`, `unknown` (no score) and `none` (host without CVE).
 
 ## Development
 
