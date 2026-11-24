@@ -23,20 +23,33 @@ The provided template uses Bulma CSS.
 - **Exposure analysis** to support risk-based remediation prioritization.
 - **Shodan export support** for JSON and compressed JSON.GZ files.
 - **Local SQLite storage** for services, network metadata, tags, and vulnerabilities.
-- **Vulnerability deduplication** based on IP address and CVE pairs.
+- **Vulnerability deduplication** per IP address, service port and CVE.
 - **HTML report generation** with sortable tables and client-side search.
 - **Customizable reports** using a Jinja2 template.
 - **Plugins** Create an Osintracker json file.
 
 ## Requirements
 
-- Python 3.8 or later.
+- Python 3.9 or later.
 - An export obtained through Shodan’s supported export features.
 
-Install the dependencies:
+With [uv](https://docs.astral.sh/uv/) (recommended), dependencies are installed on first run:
+
+```bash
+uv run shodan2db.py --help
+```
+
+Or with pip:
 
 ```bash
 python -m pip install -r requirements.txt
+```
+
+Run the tests and linter:
+
+```bash
+uv run pytest
+uv run ruff check . && uv run ruff format --check .
 ```
 
 ## Commands
@@ -81,8 +94,10 @@ Options:
   -o, --output FILE         Output path for HTML report file.
   -t, --template-file FILE  Path to the Jinja2 template file (HTML export
                             only).  [default: templates/report.html]
-  --osint TEXT              Central entity name for osintracker export
-                            (default: shodan).
+  -f, --format [html|osint|all]
+                            Which export(s) to generate.  [default: all]
+  --osint TEXT              Central entity name for osintracker export.
+                            [default: shodan]
   --osint-output TEXT       Output path for osintracker JSON file.  [default:
                             assets_osintracker.json]
   -v, --verbose             Verbose mode.
@@ -110,9 +125,9 @@ Options:
 python shodan2db.py parse -i ./example_shodan.json -d ./example_database.db -v
 
 # Step 2: Extract analytics and output your HTML dashboard
-python shodan2db.py export -d ./example_database.db -o ./example_report.html -v
+python shodan2db.py export -d ./example_database.db -f html -o ./example_report.html -v
 
-# Optionnal - Extract analytics and output your HTML dashboard + json for Osintracker import
+# Optional - HTML dashboard + JSON for Osintracker import (default format: all)
 python shodan2db.py export -d ./example_database.db -o ./example_report.html --osint example --osint-output example_osintracker -v
 ```
 
@@ -157,7 +172,12 @@ You can import `Shodan2DB` directly into third-party automated playbooks or cont
 from shodan2db import Shodan2DB
 
 # Programmatically trigger parsing and reporting
-Shodan2DB.prepare_database(verbose=True, database="production_audit")
+Shodan2DB.init_database(verbose=True, database="production_audit")
 Shodan2DB.parser(verbose=True, inputfile="raw_shodan.json", database="production_audit")
-Shodan2DB.export(verbose=True, exportfile="exposure.html", database="production_audit", template_file="templates/report.html")
+Shodan2DB.export(
+    verbose=True,
+    exportfile="exposure.html",
+    database="production_audit",
+    template_file="templates/report.html",
+)
 ```

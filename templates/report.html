@@ -495,6 +495,7 @@
                         <thead>
                             <tr>
                                 <th style="width: 15%">CVE ID</th>
+                                <th style="width: 8%">Port</th>
                                 <th style="width: 10%">CVSS Score</th>
                                 <th>Vulnerability Summary Description</th>
                             </tr>
@@ -511,6 +512,13 @@
                                         </a>
                                     </td>
                                     <td>
+                                        {% if vuln.port %}
+                                            <span class="tag is-light is-info">{{ vuln.port }}</span>
+                                        {% else %}
+                                            <span class="has-text-grey">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
                                         <span class="tag {{ 'is-danger' if vuln.cvss and vuln.cvss >= 7.0 else ('is-warning' if vuln.cvss and vuln.cvss >= 4.0 else 'is-info') }} has-text-weight-bold">
                                             {{ vuln.cvss or 'N/A' }}
                                         </span>
@@ -520,7 +528,7 @@
                             {% endif %}
                         {% endfor %}
                         {% if not ns_vuln.has_vulns %}
-                            <tr><td colspan="3" class="has-text-centered has-text-grey-italic">No vulnerabilities stored for this host.</td></tr>
+                            <tr><td colspan="4" class="has-text-centered has-text-grey-italic">No vulnerabilities stored for this host.</td></tr>
                         {% endif %}
                         </tbody>
                     </table>

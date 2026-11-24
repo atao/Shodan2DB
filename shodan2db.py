@@ -17,6 +17,67 @@ class Shodan2DB:
     and HTML report generation for vulnerability metrics.
     """
 
+    @staticmethod
+    def _migrate_vulnerabilities(cursor, verbose):
+        """
+        Rebuilds a vulnerabilities table created without the 'port' column.
+        Existing rows are kept with an unknown (NULL) port.
+        """
+        columns = [
+            row[1] for row in cursor.execute("PRAGMA table_info(vulnerabilities)")
+        ]
+        if not columns or "port" in columns:
+            return
+
+        if verbose:
+            print("[+] Migrating vulnerabilities table (adding service port)...")
+
+        cursor.execute("DROP INDEX IF EXISTS vulns_ip_index")
+        cursor.execute("ALTER TABLE vulnerabilities RENAME TO vulnerabilities_old")
+        cursor.execute("""
+            CREATE TABLE vulnerabilities (
+                ip TEXT,
+                port TEXT,
+                cveid TEXT,
+                verified NUMERIC,
+                cvss REAL,
+                summary TEXT,
+                UNIQUE(ip, port, cveid) ON CONFLICT IGNORE
+            )
+        """)
+        cursor.execute("""
+            INSERT INTO vulnerabilities (ip, port, cveid, verified, cvss, summary)
+            SELECT ip, NULL, cveid, verified, cvss, summary FROM vulnerabilities_old
+        """)
+        cursor.execute("DROP TABLE vulnerabilities_old")
+
+    @staticmethod
+    def _create_banner_index(cursor, verbose):
+        """
+        Creates the unique index used to skip banners already imported.
+        Older databases may hold duplicates on that key: the first row is kept.
+        """
+        exists = cursor.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'index' "
+            "AND name = 'services_banner_index'"
+        ).fetchone()
+        if exists:
+            return
+
+        removed = cursor.execute("""
+            DELETE FROM services WHERE id NOT IN (
+                SELECT MIN(id) FROM services
+                GROUP BY ip, port, transport, timestamp
+            )
+        """).rowcount
+        if verbose and removed:
+            print(f"[+] Removed {removed} duplicate service rows")
+
+        cursor.execute(
+            "CREATE UNIQUE INDEX services_banner_index "
+            "ON services(ip, port, transport, timestamp)"
+        )
+
     # Static method to create tables, views, and indexes in the SQLite database
     @staticmethod
     def init_database(verbose, database):
@@ -43,48 +104,55 @@ class Shodan2DB:
                 # Create 'services' table with standard auto-incrementing primary key syntax
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS services (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                        ip TEXT,  
-                        asn TEXT,  
-                        hostnames TEXT, 
-                        domains TEXT, 
-                        org TEXT,  
-                        timestamp TEXT,  
-                        isp TEXT,  
-                        os TEXT,  
-                        product TEXT,  
-                        version TEXT, 
-                        transport TEXT,  
-                        port TEXT, 
-                        data TEXT,  
-                        city TEXT,  
-                        region_code TEXT,  
-                        area_code TEXT, 
-                        country_code TEXT,  
-                        country_name TEXT,  
-                        nbvulns INTEGER, 
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        ip TEXT,
+                        asn TEXT,
+                        hostnames TEXT,
+                        domains TEXT,
+                        org TEXT,
+                        timestamp TEXT,
+                        isp TEXT,
+                        os TEXT,
+                        product TEXT,
+                        version TEXT,
+                        transport TEXT,
+                        port TEXT,
+                        data TEXT,
+                        city TEXT,
+                        region_code TEXT,
+                        area_code TEXT,
+                        country_code TEXT,
+                        country_name TEXT,
+                        nbvulns INTEGER,
                         tags TEXT
                     )
                 """)
 
-                # Create 'vulnerabilities' table with a composite unique constraint
-                # Prevents duplicate CVE tracking per IP when parsing overlapping Shodan files
+                # Databases created by older versions keyed vulnerabilities by (ip, cveid)
+                # only; rebuild that table so each CVE is attached to its service port.
+                Shodan2DB._migrate_vulnerabilities(cursor, verbose)
+
+                # One row per (ip, port, cveid): Shodan reports vulns per banner
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS vulnerabilities (
-                        ip TEXT, 
-                        cveid TEXT, 
+                        ip TEXT,
+                        port TEXT,
+                        cveid TEXT,
                         verified NUMERIC,
-                        cvss REAL, 
+                        cvss REAL,
                         summary TEXT,
-                        UNIQUE(ip, cveid) ON CONFLICT IGNORE
+                        UNIQUE(ip, port, cveid) ON CONFLICT IGNORE
                     )
                 """)
 
+                # A Shodan banner is identified by host, port, transport and scan time
+                Shodan2DB._create_banner_index(cursor, verbose)
+
                 # Create 'Summary' view for quick analytics sorted by vulnerability count
                 cursor.execute("""
-                    CREATE VIEW IF NOT EXISTS Summary AS 
-                    SELECT ip, hostnames, port, product, version, transport, isp, city, tags, nbvulns 
-                    FROM services 
+                    CREATE VIEW IF NOT EXISTS Summary AS
+                    SELECT ip, hostnames, port, product, version, transport, isp, city, tags, nbvulns
+                    FROM services
                     ORDER BY nbvulns DESC
                 """)
 
@@ -218,17 +286,13 @@ class Shodan2DB:
                                 nbvulns,
                                 tags,
                             )
+                            # Banners already imported are skipped by services_banner_index
                             cursor.execute(
-                                "INSERT INTO services (ip, asn, domains, hostnames, org, timestamp, isp, os, "
-                                "product, version, transport, port, data, city, region_code, area_code, country_code, "
-                                "country_name, nbvulns, tags) "
-                                "SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? "
-                                "WHERE NOT EXISTS (SELECT 1 FROM services WHERE "
-                                "ip IS ? AND asn IS ? AND domains IS ? AND hostnames IS ? AND org IS ? "
-                                "AND timestamp IS ? AND isp IS ? AND os IS ? AND product IS ? AND version IS ? "
-                                "AND transport IS ? AND port IS ? AND data IS ? AND city IS ? AND region_code IS ? "
-                                "AND area_code IS ? AND country_code IS ? AND country_name IS ? AND nbvulns IS ? AND tags IS ?)",
-                                service_values + service_values,
+                                "INSERT OR IGNORE INTO services (ip, asn, domains, hostnames, org, timestamp, "
+                                "isp, os, product, version, transport, port, data, city, region_code, "
+                                "area_code, country_code, country_name, nbvulns, tags) "
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                service_values,
                             )
                         except sqlite3.Error as e:
                             print(f"[!] Database error on service line {line_idx}: {e}")
@@ -243,10 +307,12 @@ class Shodan2DB:
 
                                 try:
                                     cursor.execute(
-                                        "INSERT OR IGNORE INTO vulnerabilities (ip, cveid, verified, cvss, summary) "
-                                        "VALUES (?, ?, ?, ?, ?)",
+                                        "INSERT OR IGNORE INTO vulnerabilities "
+                                        "(ip, port, cveid, verified, cvss, summary) "
+                                        "VALUES (?, ?, ?, ?, ?, ?)",
                                         (
                                             ip_str,
+                                            port,
                                             cveid,
                                             verified,
                                             cvss,
@@ -323,8 +389,8 @@ class Shodan2DB:
 
                 # Fetch individual vulnerabilities ordered by IP and severity level
                 cursor.execute("""
-                    SELECT ip, cveid, cvss, summary FROM vulnerabilities 
-                    ORDER BY ip, cvss DESC
+                    SELECT ip, port, cveid, cvss, summary FROM vulnerabilities
+                    ORDER BY ip, cvss DESC, CAST(port AS INTEGER)
                 """)
                 vulns_list = cursor.fetchall()
 
@@ -345,7 +411,7 @@ class Shodan2DB:
 
                 # Fetch consolidated statistics for recurring CVEs across infrastructure
                 cursor.execute("""
-                          SELECT cveid, count(*) AS count, MAX(cvss) AS cvss,
+                          SELECT cveid, COUNT(DISTINCT ip) AS count, MAX(cvss) AS cvss,
                               MAX(summary) AS summary
                           FROM vulnerabilities
                           GROUP BY cveid ORDER BY count DESC, cvss DESC
@@ -416,7 +482,7 @@ class Shodan2DB:
             database = f"{database}.db"
 
         if verbose:
-            print(f"[+] Exporting to osintracker format...")
+            print("[+] Exporting to osintracker format...")
 
         try:
             # Create exporter instance and export
@@ -424,7 +490,7 @@ class Shodan2DB:
             exporter.export_to_json(output_file)
 
             if verbose:
-                print(f"[+] osintracker export completed successfully!")
+                print("[+] osintracker export completed successfully!")
 
         except FileNotFoundError as e:
             print(f"[-] Error: {e}", file=sys.stderr)
@@ -501,12 +567,19 @@ def parse(verbose, database, input_file):
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
 @click.option(
+    "--format",
+    "-f",
+    "formats",
+    type=click.Choice(["html", "osint", "all"], case_sensitive=False),
+    default="all",
+    show_default=True,
+    help="Which export(s) to generate.",
+)
+@click.option(
     "--osint",
     default="shodan",
-    is_flag=False,
-    flag_value="shodan",
-    type=str,
-    help="Central entity name for osintracker export (default: shodan).",
+    show_default=True,
+    help="Central entity name for osintracker export.",
 )
 @click.option(
     "--osint-output",
@@ -516,35 +589,35 @@ def parse(verbose, database, input_file):
     show_default=True,
 )
 @click.option("--verbose", "-v", is_flag=True, help="Verbose mode.")
-def export(verbose, database, output, template_file, osint, osint_output):
+def export(verbose, database, output, template_file, formats, osint, osint_output):
     """
     Export data from the database.
 
-    Generates both HTML report and osintracker JSON format.
+    Generates the HTML report, the osintracker JSON, or both (default).
 
     Examples:
-        Default files:                 shodan2db.py export -d database.db
-        Custom HTML path:              shodan2db.py export -d database.db -o rapport.html
-        Custom entity:                 shodan2db.py export -d database.db --osint "Campaign"
-        Custom osintracker output:    shodan2db.py export -d database.db --osint-output custom.json
+        Both exports:                  shodan2db.py export -d database.db
+        HTML report only:              shodan2db.py export -d database.db -f html -o rapport.html
+        osintracker only:              shodan2db.py export -d database.db -f osint --osint "Campaign"
+        Custom osintracker output:     shodan2db.py export -d database.db --osint-output custom.json
     """
-    # Always generate HTML report
-    if output is None:
-        output = "shodan.html"
-    Shodan2DB.export(
-        verbose=verbose,
-        database=database,
-        exportfile=output,
-        template_file=template_file,
-    )
+    formats = formats.lower()
 
-    # Always generate osintracker JSON with the specified entity name
-    Shodan2DB.export_osintracker(
-        verbose=verbose,
-        database=database,
-        output_file=osint_output,
-        alias=osint,
-    )
+    if formats in ("html", "all"):
+        Shodan2DB.export(
+            verbose=verbose,
+            database=database,
+            exportfile=output or "shodan.html",
+            template_file=template_file,
+        )
+
+    if formats in ("osint", "all"):
+        Shodan2DB.export_osintracker(
+            verbose=verbose,
+            database=database,
+            output_file=osint_output,
+            alias=osint,
+        )
 
 
 # Add the parse and export commands to the CLI group

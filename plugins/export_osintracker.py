@@ -12,7 +12,7 @@ import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Optional
 
 import click
 
@@ -45,8 +45,8 @@ class OsintrackerExporter:
             raise FileNotFoundError(f"Database file not found: {self.database}")
 
         # Cache for entity IDs to avoid duplicates
-        self.entity_ids: Dict[Tuple[str, str], str] = {}
-        self.relationships: Set[Tuple[str, str, str, str]] = set()
+        self.entity_ids: dict[tuple[str, str], str] = {}
+        self.relationships: set[tuple[str, str, str, str]] = set()
 
     def _log(self, message: str, level: str = "info") -> None:
         """Print verbose log messages."""
@@ -67,14 +67,16 @@ class OsintrackerExporter:
 
     def _get_vulnerabilities(
         self, conn: sqlite3.Connection, ip: str
-    ) -> Tuple[int, List[str], float]:
+    ) -> tuple[int, list[str], float]:
         """Fetch vulnerabilities for a given IP address."""
         cursor = conn.cursor()
+        # The same CVE can be reported on several ports of one host: count it once
         cursor.execute(
             """
-            SELECT cveid, cvss FROM vulnerabilities 
-            WHERE ip = ? 
-            ORDER BY cvss DESC NULLS LAST
+            SELECT cveid, MAX(cvss) AS cvss FROM vulnerabilities
+            WHERE ip = ?
+            GROUP BY cveid
+            ORDER BY cvss IS NULL, cvss DESC
             """,
             (ip,),
         )
@@ -86,7 +88,7 @@ class OsintrackerExporter:
                 max_cvss = row[1]
         return len(cve_list), cve_list, max_cvss
 
-    def _parse_list_field(self, field_value: Optional[str]) -> List[str]:
+    def _parse_list_field(self, field_value: Optional[str]) -> list[str]:
         """Convert space-separated string to list, handling None values."""
         if not field_value:
             return []
@@ -116,11 +118,11 @@ class OsintrackerExporter:
         self,
         entity_type: str,
         value: str,
-        service_data: Dict[str, Any],
+        service_data: dict[str, Any],
         vuln_count: int,
-        cve_ids: List[str],
+        cve_ids: list[str],
         max_cvss: float = 0.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create an osintracker entity."""
         entity_id = self._get_entity_id(entity_type, value)
 
@@ -200,7 +202,7 @@ class OsintrackerExporter:
                 services = cursor.fetchall()
 
                 entities = []
-                entity_set: Set[Tuple[str, str]] = set()
+                entity_set: set[tuple[str, str]] = set()
                 alias_id = None
 
                 # Create alias/campaign entity if provided
@@ -288,7 +290,7 @@ class OsintrackerExporter:
 
                 # Build relationships array
                 relations = []
-                for origin_id, target_id, label, direction in self.relationships:
+                for origin_id, target_id, label, _direction in self.relationships:
                     relation = {
                         "id": str(uuid.uuid4()),
                         "originId": origin_id,
@@ -316,7 +318,7 @@ class OsintrackerExporter:
         except sqlite3.Error as e:
             print(f"[-] Database error: {e}", file=sys.stderr)
             sys.exit(1)
-        except IOError as e:
+        except OSError as e:
             print(f"[-] File error: {e}", file=sys.stderr)
             sys.exit(1)
 
@@ -359,7 +361,7 @@ if __name__ == "__main__":
         try:
             exporter = OsintrackerExporter(database, verbose, alias)
             exporter.export_to_json(output)
-            print(f"[✓] Export completed successfully!")
+            print("[✓] Export completed successfully!")
 
         except FileNotFoundError as e:
             print(f"[-] Error: {e}", file=sys.stderr)
