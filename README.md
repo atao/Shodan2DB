@@ -10,9 +10,7 @@ You can display results on [Osintracker](https://app.osintracker.com).
 
 You can sometimes find a Shodan lifetime membership on sale for as little as $4 or $5 during special events, such as the platform’s anniversary or Black Friday. The regular price is $49 as a one-time payment, with no annual renewal fee.
 
-Reports can be customized in [src/shodan2db/templates/report.html](src/shodan2db/templates/report.html) using Jinja2.
-
-The provided template uses Bulma CSS.
+Reports use a Jinja2 template that you can replace with your own (see [Templates Customization](#templates-customization)).
 
 ## Features
 
@@ -26,7 +24,7 @@ The provided template uses Bulma CSS.
 - **Vulnerability deduplication** per IP address, service port and CVE.
 - **HTML report generation** with sortable tables and client-side search.
 - **Customizable reports** using a Jinja2 template.
-- **Plugins** Create an Osintracker json file.
+- **Osintracker export** as a JSON graph of IPs, host/domain names and their relations.
 
 ## Installation
 
@@ -158,9 +156,15 @@ The schema is versioned (`PRAGMA user_version`); databases created by older rele
 
 ## Templates Customization
 
-The presentation architecture is entirely modular. You can seamlessly customize the structural layout or interface themes inside [src/shodan2db/templates/report.html](src/shodan2db/templates/report.html). 
+The built-in template is [src/shodan2db/templates/report.html](src/shodan2db/templates/report.html). To customize it, copy it anywhere and pass your copy with `-t` (editing the installed file would be overwritten by updates):
 
-The default layout leverages **Bulma CSS** to render high-contrast, professional cybersecurity matrices with custom conditional coloring for CVSS threat scales.
+```bash
+shodan2db export -d audit.db -f html -t ./my_report.html -o audit.html
+```
+
+The template receives `vulns_hosts` and `all_hosts` (each host with its `services` and `vulns`), `cves`, `total_hosts`, `total_services` and `total_vulns`.
+
+The default layout uses **Bulma CSS** and **Bootstrap Icons** loaded from a CDN: opening the report requires internet access for its styling.
 
 ## Development
 
