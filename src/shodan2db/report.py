@@ -144,6 +144,11 @@ def load_report_data(conn):
             if not host["cves"]
             else min((c["severity"] for c in host["cves"]), key=SEVERITIES.index)
         )
+        # Every severity present on the host: a host with critical and low
+        # CVEs must show up when filtering on "low" too
+        host["severities"] = [
+            s for s in SEVERITIES[:-1] if any(c["severity"] == s for c in host["cves"])
+        ] or ["none"]
         host["ports"] = sorted(
             {s["port"] for s in host["services"] if s["port"] is not None}
         )
@@ -185,6 +190,11 @@ def load_report_data(conn):
         "total_services": total_services,
         "total_vulns": sum(h["nbvulns"] for h in vulnerable),
         "severity_counts": severity_counts,
+        # Number of hosts having at least one CVE of each severity
+        "severity_host_counts": {
+            s: sum(1 for h in hosts.values() if s in h["severities"])
+            for s in SEVERITIES
+        },
         "cves": cves,
     }
 

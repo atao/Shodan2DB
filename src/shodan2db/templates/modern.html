@@ -324,11 +324,9 @@ footer { padding: 24px 0 40px; color: var(--muted); font-size: 12px; text-align:
         <h2>Hosts</h2>
         <div class="filters" role="group" aria-label="Filter by severity">
             <button type="button" data-filter="all" aria-pressed="true">All</button>
-            {% for sev in ("critical", "high", "medium", "low", "unknown", "none") %}
-                {% set n = hosts | selectattr("severity", "equalto", sev) | list | length %}
-                {% if n %}
-                    <button type="button" data-filter="{{ sev }}" aria-pressed="false"><span class="dot bg-{{ sev }}" style="display: inline-block"></span> {{ severity_labels[sev] }} ({{ n }})</button>
-                {% endif %}
+            {# Each chip counts the hosts having at least one CVE of that severity #}
+            {% for sev, n in severity_host_counts.items() if n %}
+                <button type="button" data-filter="{{ sev }}" aria-pressed="false" title="{{ n }} host{{ 's' if n != 1 }} with {{ severity_labels[sev] | lower }} findings"><span class="dot bg-{{ sev }}" style="display: inline-block"></span> {{ severity_labels[sev] }} ({{ n }})</button>
             {% endfor %}
             <button type="button" id="toggle-all">Expand all</button>
             <span class="count" id="host-count"></span>
@@ -339,7 +337,7 @@ footer { padding: 24px 0 40px; color: var(--muted); font-size: 12px; text-align:
             {%- set search_text = [host.ip, host.hostnames, host.isp, host.org, host.city, host.country, host.tags]
                 | select | join(" ") ~ " " ~ host.products | join(" ") ~ " " ~ host.ports | join(" ")
                 ~ " " ~ host.cves | map(attribute="cveid") | join(" ") %}
-            <details class="card host" id="host-{{ host.ip }}" data-severity="{{ host.severity }}" data-search="{{ search_text | lower }}">
+            <details class="card host" id="host-{{ host.ip }}" data-severity="{{ host.severity }}" data-severities="{{ host.severities | join(' ') }}" data-search="{{ search_text | lower }}">
                 <summary>
                     <span class="stripe bg-{{ host.severity }}"></span>
                     <div class="host-id">
@@ -406,7 +404,7 @@ footer { padding: 24px 0 40px; color: var(--muted); font-size: 12px; text-align:
                                 </thead>
                                 <tbody>
                                 {% for cve in host.cves %}
-                                    <tr>
+                                    <tr data-severity="{{ cve.severity }}">
                                         <td class="mono">
                                             <a href="https://nvd.nist.gov/vuln/detail/{{ cve.cveid }}" target="_blank" rel="noopener">{{ cve.cveid }}</a>
                                             {% if cve.verified %}<div class="verified">verified</div>{% endif %}
@@ -447,7 +445,7 @@ footer { padding: 24px 0 40px; color: var(--muted); font-size: 12px; text-align:
                 </thead>
                 <tbody>
                 {% for cve in cves %}
-                    <tr>
+                    <tr data-severity="{{ cve.severity }}">
                         <td class="mono"><a href="https://nvd.nist.gov/vuln/detail/{{ cve.cveid }}" target="_blank" rel="noopener">{{ cve.cveid }}</a></td>
                         <td class="num" data-sort="{{ cve.cvss if cve.cvss is not none else -1 }}">{{ cvss_badge(cve.cvss, cve.severity) }}</td>
                         <td class="num">{{ cve.count }}</td>
@@ -475,21 +473,27 @@ footer { padding: 24px 0 40px; color: var(--muted); font-size: 12px; text-align:
         localStorage.setItem("shodan2db-theme", dark ? "dark" : "light");
     });
 
-    // Long tables (data-limit) show their first rows until expanded; sorting keeps the limit
-    function applyLimit(table) {
+    // Active severity filter ("all", "none" or a severity) shared by hosts and CVE tables
+    var activeFilter = "all";
+    function severityFiltered() { return activeFilter !== "all" && activeFilter !== "none"; }
+
+    // CVE rows: with a severity filter only that severity is shown; otherwise
+    // long tables (data-limit) show their first rows until expanded
+    function refreshTable(table) {
         var limit = parseInt(table.dataset.limit, 10);
+        var filtering = severityFiltered() && table.querySelector("tbody tr[data-severity]");
         Array.from(table.tBodies[0].rows).forEach(function (row, i) {
-            row.hidden = !isNaN(limit) && i >= limit;
+            row.hidden = filtering ? row.dataset.severity !== activeFilter : !isNaN(limit) && i >= limit;
         });
     }
     var cveTable = document.getElementById("cve-table");
     var cveMore = document.getElementById("cve-more");
-    if (cveTable) applyLimit(cveTable);
+    if (cveTable) refreshTable(cveTable);
     if (cveMore) {
         cveMore.addEventListener("click", function () {
             var expanded = !cveTable.dataset.limit;
             if (expanded) cveTable.dataset.limit = "10"; else delete cveTable.dataset.limit;
-            applyLimit(cveTable);
+            refreshTable(cveTable);
             cveMore.textContent = expanded ? "Show all " + cveMore.dataset.total + " CVEs" : "Show top 10 only";
         });
     }
@@ -517,33 +521,35 @@ footer { padding: 24px 0 40px; color: var(--muted); font-size: 12px; text-align:
                     var r = numeric ? (parseFloat(x) || 0) - (parseFloat(y) || 0) : collator.compare(x, y);
                     return ascending ? r : -r;
                 }).forEach(function (row) { body.appendChild(row); });
-                applyLimit(table);
+                refreshTable(table);
             };
             th.addEventListener("click", sort);
             th.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); sort(); } });
         });
     });
 
-    // Host search + severity filter
+    // Host search + severity filter: a host matches a severity when it has at
+    // least one CVE of that severity, whatever its worst CVE is
     var hosts = Array.from(document.querySelectorAll("details.host"));
     var search = document.getElementById("search");
     var counter = document.getElementById("host-count");
     var noMatch = document.getElementById("no-match");
     var filterButtons = document.querySelectorAll(".filters button[data-filter]");
-    var activeFilter = "all";
 
     function applyFilters() {
         var terms = search.value.toLowerCase().split(/\s+/).filter(Boolean);
         var shown = 0;
         hosts.forEach(function (host) {
             var text = host.dataset.search;
-            var visible = (activeFilter === "all" || host.dataset.severity === activeFilter)
+            var visible = (activeFilter === "all" || host.dataset.severities.split(" ").indexOf(activeFilter) !== -1)
                 && terms.every(function (t) { return text.indexOf(t) !== -1; });
             host.hidden = !visible;
             if (visible) shown++;
         });
         counter.textContent = shown === hosts.length ? hosts.length + " hosts" : shown + " of " + hosts.length + " hosts";
         noMatch.hidden = shown !== 0;
+        document.querySelectorAll("table.sortable").forEach(refreshTable);
+        if (cveMore) cveMore.hidden = severityFiltered();
     }
     search.addEventListener("input", applyFilters);
     filterButtons.forEach(function (button) {
@@ -551,6 +557,8 @@ footer { padding: 24px 0 40px; color: var(--muted); font-size: 12px; text-align:
             activeFilter = button.dataset.filter;
             filterButtons.forEach(function (b) { b.setAttribute("aria-pressed", String(b === button)); });
             applyFilters();
+            // Unfold the matching hosts so their filtered CVEs are visible at once
+            if (severityFiltered()) hosts.forEach(function (h) { if (!h.hidden) h.open = true; });
         });
     });
     applyFilters();
@@ -574,7 +582,7 @@ footer { padding: 24px 0 40px; color: var(--muted); font-size: 12px; text-align:
         hosts.forEach(function (h) { h.open = true; });
         if (cveTable) Array.from(cveTable.tBodies[0].rows).forEach(function (row) { row.hidden = false; });
     });
-    window.addEventListener("afterprint", function () { if (cveTable) applyLimit(cveTable); });
+    window.addEventListener("afterprint", function () { if (cveTable) refreshTable(cveTable); });
 })();
 </script>
 </body>

@@ -118,3 +118,23 @@ def test_classic_template_groups_cves_and_compacts_other_hosts(tmp_path, populat
     # Host .20 has no CVE: a table row, not a full section
     assert '<tr id="192.0.2.20"' in html
     assert html.count('class="section box') == 1
+
+
+def test_low_cves_on_a_critical_host_are_filterable(tmp_path, db):
+    from conftest import banner, write_export
+    from shodan2db import parse_file
+
+    vulns = {"CVE-2024-0009": {"cvss": 9.8}, "CVE-2024-0003": {"cvss": 2.1}}
+    parse_file(write_export(tmp_path / "in.json", [banner(80, vulns)]), db)
+    with open_database(db) as conn:
+        data = load_report_data(conn)
+
+    [host] = data["hosts"]
+    assert host["severity"] == "critical"
+    assert host["severities"] == ["critical", "low"]
+    assert data["severity_host_counts"]["low"] == 1
+
+    export_html(db, tmp_path / "m.html", "modern")
+    html = (tmp_path / "m.html").read_text()
+    assert 'data-filter="low"' in html
+    assert 'data-severities="critical low"' in html
