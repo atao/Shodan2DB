@@ -29,7 +29,7 @@ Reports use a Jinja2 template that you can replace with your own (see [Templates
 
 ## Installation
 
-Requires Python 3.9 or later and an export obtained through Shodan’s supported export features.
+Requires Python 3.10 or later and an export obtained through Shodan’s supported export features.
 
 Install the `shodan2db` command with [uv](https://docs.astral.sh/uv/):
 

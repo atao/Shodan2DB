@@ -3,8 +3,6 @@ Interactive mode: pick Shodan exports, a database and the reports to build
 from menus instead of command-line options.
 """
 
-from __future__ import annotations
-
 import gzip
 import sqlite3
 from dataclasses import dataclass, field

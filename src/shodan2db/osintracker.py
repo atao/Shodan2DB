@@ -9,7 +9,7 @@ import json
 import time
 import uuid
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from .database import Shodan2DBError, log, open_database
 
@@ -94,9 +94,7 @@ def load_hosts(conn) -> dict[str, dict[str, Any]]:
 class OsintrackerExporter:
     """Builds the osintracker graph from a Shodan2DB database."""
 
-    def __init__(
-        self, database: str, verbose: bool = False, alias: Optional[str] = None
-    ):
+    def __init__(self, database: str, verbose: bool = False, alias: str | None = None):
         self.database = database
         self.verbose = verbose
         self.alias = alias
