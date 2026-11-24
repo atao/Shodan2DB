@@ -33,7 +33,7 @@ def test_html_report(tmp_path, populated_db):
     html = (tmp_path / "report.html").read_text()
 
     assert output.endswith("report.html")
-    assert "1 hosts affected" in html
+    assert ">1 host</span>" in html  # CVE index: hosts affected, singular
     assert '<span class="tag is-light is-info">443</span>' in html
     assert "192.0.2.20" in html
     assert "unpkg.com" not in html
@@ -103,3 +103,18 @@ def test_severity_summary(populated_db):
 def test_unknown_template_name(tmp_path, populated_db):
     with pytest.raises(Shodan2DBError, match="built-in: classic, modern"):
         export_html(populated_db, tmp_path / "r.html", "fancy")
+
+
+def test_classic_template_groups_cves_and_compacts_other_hosts(tmp_path, populated_db):
+    export_html(populated_db, tmp_path / "c.html", "classic")
+    html = (tmp_path / "c.html").read_text()
+
+    # Host .10: CVE-2024-0001 is one row with both ports
+    assert (
+        '<span class="tag is-light is-info">80</span><span class="tag is-light is-info">443</span>'
+        in html
+    )
+    assert "border-sev-critical" in html
+    # Host .20 has no CVE: a table row, not a full section
+    assert '<tr id="192.0.2.20"' in html
+    assert html.count('class="section box') == 1
