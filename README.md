@@ -178,7 +178,7 @@ Two templates are built in, selected with `-t`:
 
 | Template | Description |
 |---|---|
-| `classic` (default) | The original Bulma report. Loads Bulma CSS and Bootstrap Icons from a CDN, so it needs internet access to be styled. |
+| `classic` (default) | Bulma layout: severity KPIs, one detailed section per vulnerable host (each CVE with its ports), a compact table for the other hosts, a CVE index, search and dark mode. Loads Bulma CSS and Bootstrap Icons from a CDN, so it needs internet access to be styled. |
 | `modern` | Self-contained (no external resources, works offline). Severity overview, collapsible host cards sorted by risk, each CVE listed once with its ports, search and severity filters, dark mode, print-friendly. |
 
 ```bash
