@@ -10,7 +10,7 @@ You can display results on [Osintracker](https://app.osintracker.com).
 
 You can sometimes find a Shodan lifetime membership on sale for as little as $4 or $5 during special events, such as the platform’s anniversary or Black Friday. The regular price is $49 as a one-time payment, with no annual renewal fee.
 
-Reports can be customized in [templates/report.html](templates/report.html) using Jinja2.
+Reports can be customized in [src/shodan2db/templates/report.html](src/shodan2db/templates/report.html) using Jinja2.
 
 The provided template uses Bulma CSS.
 
@@ -28,80 +28,78 @@ The provided template uses Bulma CSS.
 - **Customizable reports** using a Jinja2 template.
 - **Plugins** Create an Osintracker json file.
 
-## Requirements
+## Installation
 
-- Python 3.9 or later.
-- An export obtained through Shodan’s supported export features.
+Requires Python 3.9 or later and an export obtained through Shodan’s supported export features.
 
-With [uv](https://docs.astral.sh/uv/), dependencies are installed on first run:
-
-```bash
-uv run shodan2db.py --help
-```
-
-Without uv, install the two runtime dependencies with pip:
+Install the `shodan2db` command with [uv](https://docs.astral.sh/uv/):
 
 ```bash
-python -m pip install click jinja2
+uv tool install git+https://github.com/atao/Shodan2DB
 ```
 
-Run the tests and linter:
+Or run it from a clone without installing anything:
 
 ```bash
-uv run pytest
-uv run ruff check . && uv run ruff format --check .
+uv run shodan2db --help
 ```
+
+Without uv: `python -m pip install .` from a clone.
 
 ## Commands
 
 ```bash
-Usage: shodan2db.py [OPTIONS] COMMAND [ARGS]...
+Usage: shodan2db [OPTIONS] COMMAND [ARGS]...
 
-  Shodan2DB CLI tool for parsing Shodan JSON exports and generating HTML
+  Parse Shodan JSON exports into SQLite and generate HTML / osintracker
   reports.
 
 Options:
-  --help  Show this message and exit.
+  -V, --version  Show the version and exit.
+  -h, --help     Show this message and exit.
 
 Commands:
-  export  Generate an HTML report from the data in the database.
-  parse   Parse exported file from Shodan and store into a SQLite database.
+  export  Export the database as an HTML report, an osintracker JSON...
+  parse   Parse a Shodan export and store it into a SQLite database.
 ```
 
 ### Command : parse
 
 ```bash
-Usage: shodan2db.py parse [OPTIONS]
+Usage: shodan2db parse [OPTIONS]
 
-  Parse exported file from Shodan and store into a SQLite database.
+  Parse a Shodan export and store it into a SQLite database.
 
 Options:
   -i, --input-file FILE  JSON or JSON.GZ export file from Shodan.  [required]
-  -d, --database FILE    Target database name or path.  [required]
+  -d, --database FILE    Target database name or path (.db is added if
+                         missing).  [required]
   -v, --verbose          Verbose mode.
   -h, --help             Show this message and exit.
 ```
 
+Importing the same export twice is safe: banners already stored (same IP, port, transport and scan time) and CVEs already linked to a port are skipped.
+
 ### Command : export
 
 ```bash
-Usage: shodan2db.py export [OPTIONS]
+Usage: shodan2db export [OPTIONS]
 
-  Export data from database (HTML report or osintracker JSON).
+  Export the database as an HTML report, an osintracker JSON file, or both.
 
 Options:
-  -d, --database FILE       Path to the SQLite database file.  [required]
-  -o, --output FILE         Output path for HTML report file.
-  -t, --template-file FILE  Path to the Jinja2 template file (HTML export
-                            only).  [default: templates/report.html]
-  -f, --format [html|osint|all]
-                            Which export(s) to generate.  [default: all]
-  --osint TEXT              Central entity name for osintracker export.
-                            [default: shodan]
-  --osint-output TEXT       Output path for osintracker JSON file.  [default:
-                            assets_osintracker.json]
-  -v, --verbose             Verbose mode.
-  -h, --help                Show this message and exit.
+  -d, --database FILE            Path to the SQLite database file.  [required]
+  -f, --format [html|osint|all]  Which export(s) to generate.  [default: all]
+  -o, --output FILE              Output path for the HTML report.  [default:
+                                 shodan.html]
+  -t, --template-file FILE       Jinja2 template for the HTML report.
+                                 [default: (built-in report.html)]
+  --osint TEXT                   Central entity name for the osintracker
+                                 export.  [default: shodan]
+  --osint-output FILE            Output path for the osintracker JSON file.
+                                 [default: assets_osintracker.json]
+  -v, --verbose                  Verbose mode.
+  -h, --help                     Show this message and exit.
 ```
 
 ## Quickstart
@@ -122,13 +120,13 @@ Options:
 
 ```bash
 # Step 1: Parse and seed your structured SQLite layer
-python shodan2db.py parse -i ./example_shodan.json -d ./example_database.db -v
+shodan2db parse -i ./example_shodan.json -d ./example_database.db -v
 
 # Step 2: Extract analytics and output your HTML dashboard
-python shodan2db.py export -d ./example_database.db -f html -o ./example_report.html -v
+shodan2db export -d ./example_database.db -f html -o ./example_report.html -v
 
 # Optional - HTML dashboard + JSON for Osintracker import (default format: all)
-python shodan2db.py export -d ./example_database.db -o ./example_report.html --osint example --osint-output example_osintracker -v
+shodan2db export -d ./example_database.db -o ./example_report.html --osint example --osint-output example_osintracker -v
 ```
 
 
@@ -152,32 +150,33 @@ python shodan2db.py export -d ./example_database.db -o ./example_report.html --o
 
 ## Database Architecture
 
-Upon initialization, the tool optimizes SQLite pragmas and automatically structures the underlying relational objects:
+The schema is versioned (`PRAGMA user_version`); databases created by older releases are upgraded automatically the first time they are opened.
 
-- **`services`**: Houses core operational network service logs, banners, localisation, ISP allocations, and metadata.
-- **`vulnerabilities`**: Stores indexed granular mappings of CVE IDs alongside their verified CVSS scores and threat summary descriptions.
-- **`Summary` (View)**: An internal prioritized virtual evaluation layer sorting network entities by physical exposure risk (`nbvulns DESC`).
+- **`services`**: one row per Shodan banner (IP, port, transport, scan time): service, banner, location, ISP and tags.
+- **`vulnerabilities`**: one row per CVE and service port, with its CVSS score, verification status and summary.
+- **`Summary` (View)**: services sorted by vulnerability count (`nbvulns DESC`).
 
 ## Templates Customization
 
-The presentation architecture is entirely modular. You can seamlessly customize the structural layout or interface themes inside [templates/report.html](templates/report.html). 
+The presentation architecture is entirely modular. You can seamlessly customize the structural layout or interface themes inside [src/shodan2db/templates/report.html](src/shodan2db/templates/report.html). 
 
 The default layout leverages **Bulma CSS** to render high-contrast, professional cybersecurity matrices with custom conditional coloring for CVSS threat scales.
 
 ## Development
 
-You can import `Shodan2DB` directly into third-party automated playbooks or continuous integration loops as a native Python class:
+```bash
+uv run pytest                                      # tests
+uv run ruff check . && uv run ruff format --check . # lint
+```
+
+The package can also be used as a library:
 
 ```python
-from shodan2db import Shodan2DB
+from shodan2db import export_html, export_osintracker, parse_file
 
-# Programmatically trigger parsing and reporting
-Shodan2DB.init_database(verbose=True, database="production_audit")
-Shodan2DB.parser(verbose=True, inputfile="raw_shodan.json", database="production_audit")
-Shodan2DB.export(
-    verbose=True,
-    exportfile="exposure.html",
-    database="production_audit",
-    template_file="templates/report.html",
-)
+parse_file("raw_shodan.json.gz", "production_audit.db", verbose=True)
+export_html("production_audit.db", "exposure.html")
+export_osintracker("production_audit.db", "exposure_osintracker.json", alias="Audit")
 ```
+
+Errors (missing file, invalid database or template) are raised as `shodan2db.Shodan2DBError`.
